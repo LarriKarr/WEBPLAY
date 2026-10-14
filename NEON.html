@@ -3,15 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightful Gambling Web App</title>
+    <title>Lightful Gambling Web App - NEON EDITION</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes pulse-glow {
             0%, 100% { box-shadow: 0 0 15px rgba(236, 72, 153, 0.5), inset 0 0 15px rgba(236, 72, 153, 0.3); }
-            50% { box-shadow: 0 0 30px rgba(236, 72, 153, 0.8), inset 0 0 25px rgba(236, 72, 153, 0.5); }
+            50% { box-shadow: 0 0 35px rgba(236, 72, 153, 0.9), inset 0 0 25px rgba(236, 72, 153, 0.6); }
+        }
+        @keyframes win-glow {
+            0%, 100% { box-shadow: 0 0 25px rgba(234, 179, 8, 0.7), inset 0 0 25px rgba(234, 179, 8, 0.4); border-color: rgba(234, 179, 8, 0.9); }
+            50% { box-shadow: 0 0 50px rgba(234, 179, 8, 1), inset 0 0 40px rgba(234, 179, 8, 0.7); border-color: rgba(250, 204, 21, 1); }
+        }
+        @keyframes screen-shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-3px, 2px); }
+            40% { transform: translate(3px, -2px); }
+            60% { transform: translate(-2px, -1px); }
+            80% { transform: translate(2px, 2px); }
         }
         .neon-box {
             animation: pulse-glow 3s infinite;
+        }
+        .win-active {
+            animation: win-glow 0.8s infinite alternate !important;
+        }
+        .shake-screen {
+            animation: screen-shake 0.4s ease-in-out;
         }
         .slot-reel {
             scrollbar-width: none;
@@ -27,6 +44,11 @@
             justify-content: center;
             font-size: 3rem;
             user-select: none;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+            transition: transform 0.2s;
+        }
+        .symbol:hover {
+            transform: scale(1.05);
         }
         @keyframes firework {
             0% { transform: scale(0.1); opacity: 1; }
@@ -38,14 +60,27 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            animation: firework 0.8s ease-out forwards;
+            animation: firework 0.9s ease-out forwards;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1.2); opacity: 0; }
+        }
+        .floating-coin {
+            position: absolute;
+            font-size: 1.8rem;
+            animation: float-up 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 40;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans relative overflow-x-hidden">
+<body id="main-body" class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans relative overflow-x-hidden">
 
     <!-- Салют контейнер -->
     <div id="fireworks-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden hidden"></div>
+    <!-- Контейнер для всплывающих монет -->
+    <div id="coins-container" class="fixed inset-0 pointer-events-none z-40 overflow-hidden"></div>
 
     <!-- Шапка с логотипом -->
     <header class="w-full max-w-2xl flex items-center justify-between my-2">
@@ -73,16 +108,16 @@
         <div class="grid grid-cols-2 gap-3 w-full">
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center shadow-inner">
                 <div class="text-xs text-slate-400 uppercase tracking-wider">Баланс</div>
-                <div id="balance" class="text-2xl font-black text-emerald-400 mt-0.5">1000</div>
+                <div id="balance" class="text-2xl font-black text-emerald-400 mt-0.5 transition-all">1000</div>
             </div>
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center shadow-inner">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center shadow-inner relative overflow-hidden">
                 <div class="text-xs text-slate-400 uppercase tracking-wider">Выигрыш</div>
-                <div id="win-display" class="text-2xl font-black text-yellow-400 mt-0.5">0</div>
+                <div id="win-display" class="text-2xl font-black text-yellow-400 mt-0.5 transition-transform">0</div>
             </div>
         </div>
 
         <!-- Игровой слот-бокс -->
-        <div class="relative w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 border-4 border-pink-500/40 rounded-3xl p-3 shadow-[0_0_30px_rgba(236,72,153,0.2)] neon-box">
+        <div id="slot-box" class="relative w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 border-4 border-pink-500/40 rounded-3xl p-3 shadow-[0_0_30px_rgba(236,72,153,0.2)] neon-box transition-all">
             <div class="grid grid-cols-3 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 overflow-hidden relative">
                 <div class="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-slate-950 to-transparent pointer-events-none z-10"></div>
                 <div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-slate-950 to-transparent pointer-events-none z-10"></div>
@@ -206,15 +241,15 @@
                     <span class="font-bold text-yellow-400">x3</span>
                 </div>
                 <div class="flex items-center justify-between bg-slate-950/60 p-2 rounded-lg border border-slate-800/50">
-                    <span>🍒 🍒 ❌</span>
+                    <span>🍒&nbsp;🍒&nbsp;&nbsp;❌</span>
                     <span class="font-bold text-yellow-400">x2.5</span>
                 </div>
                 <div class="flex items-center justify-between bg-slate-950/60 p-2 rounded-lg border border-slate-800/50">
-                    <span>🍒 ❌ 🍒</span>
+                    <span>🍒&nbsp;❌&nbsp;&nbsp;🍒</span>
                     <span class="font-bold text-yellow-400">x2</span>
                 </div>
                 <div class="flex items-center justify-between bg-slate-950/60 p-2 rounded-lg border border-slate-800/50">
-                    <span>❌ 🍒 🍒</span>
+                    <span>❌&nbsp;&nbsp;🍒&nbsp;🍒</span>
                     <span class="font-bold text-yellow-400">x1.5</span>
                 </div>
             </div>
@@ -234,7 +269,7 @@
             <div class="grid grid-cols-3 gap-3 my-6">
                 <button id="chest-1" onclick="pickBonus(1)" class="bg-slate-950/80 border-2 border-yellow-500/60 hover:border-yellow-400 hover:scale-105 transition rounded-2xl p-4 text-4xl shadow-lg flex items-center justify-center h-20">🎁</button>
                 <button id="chest-2" onclick="pickBonus(2)" class="bg-slate-950/80 border-2 border-yellow-500/60 hover:border-yellow-400 hover:scale-105 transition rounded-2xl p-4 text-4xl shadow-lg flex items-center justify-center h-20">🎁</button>
-                <button id="chest-3" onclick="pickBonus(3)" class="pickBonus(3)" class="bg-slate-950/80 border-2 border-yellow-500/60 hover:border-yellow-400 hover:scale-105 transition rounded-2xl p-4 text-4xl shadow-lg flex items-center justify-center h-20">🎁</button>
+                <button id="chest-3" onclick="pickBonus(3)" class="bg-slate-950/80 border-2 border-yellow-500/60 hover:border-yellow-400 hover:scale-105 transition rounded-2xl p-4 text-4xl shadow-lg flex items-center justify-center h-20">🎁</button>
             </div>
 
             <div id="bonus-result-text" class="text-sm font-bold text-emerald-400 min-h-[30px]"></div>
@@ -273,6 +308,9 @@
         const autoSelectEl = document.getElementById('auto-spins-select');
         const autoCounterEl = document.getElementById('auto-counter');
         const fireworksContainer = document.getElementById('fireworks-container');
+        const coinsContainer = document.getElementById('coins-container');
+        const slotBox = document.getElementById('slot-box');
+        const mainBody = document.getElementById('main-body');
 
         function toggleModal(show) {
             modalEl.classList.toggle('hidden', !show);
@@ -307,28 +345,42 @@
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 const now = audioCtx.currentTime;
+
                 if (type === 'tick') {
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(300, now);
                     osc.frequency.exponentialRampToValueAtTime(100, now + 0.05);
-                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.setValueAtTime(0.04, now);
                     gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
                     osc.start(now); osc.stop(now + 0.05);
                 } else if (type === 'win') {
+                    // Мелодичный победный перелив из трех нот
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(440, now);
-                    osc.frequency.setValueAtTime(659.25, now + 0.1);
-                    osc.frequency.setValueAtTime(880, now + 0.2);
+                    osc.frequency.setValueAtTime(523.25, now);     // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.12); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.24); // G5
+                    osc.frequency.setValueAtTime(1046.50, now + 0.36); // C6
                     gain.gain.setValueAtTime(0.15, now);
-                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
-                    osc.start(now); osc.stop(now + 0.4);
-                } else if (type === 'bonus') {
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now); osc.stop(now + 0.6);
+                } else if (type === 'bigwin') {
+                    // Усиленный эпичный выигрыш
                     osc.type = 'square';
+                    const notes = [440, 554.37, 659.25, 880, 1108.73];
+                    notes.forEach((freq, idx) => {
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    });
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+                    osc.start(now); osc.stop(now + 0.8);
+                } else if (type === 'bonus') {
+                    osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(587.33, now);
                     osc.frequency.setValueAtTime(880, now + 0.15);
+                    osc.frequency.setValueAtTime(1174.66, now + 0.3);
                     gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
-                    osc.start(now); osc.stop(now + 0.5);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.7);
+                    osc.start(now); osc.stop(now + 0.7);
                 }
             } catch (e) {}
         }
@@ -434,6 +486,9 @@
                 stopAutoSpins();
                 return;
             }
+
+            // Убираем подсветку прошлого выигрыша
+            slotBox.classList.remove('win-active');
 
             balance -= totalCost;
             balanceEl.textContent = balance;
@@ -582,7 +637,20 @@
                 balance += totalWin;
                 balanceEl.textContent = balance;
                 winDisplayEl.textContent = totalWin;
-                playSound('win');
+                
+                // Визуальные эффекты победы
+                slotBox.classList.add('win-active');
+                mainBody.classList.add('shake-screen');
+                setTimeout(() => mainBody.classList.remove('shake-screen'), 400);
+
+                if (totalWin >= lineBet * activeLines * 10) {
+                    playSound('bigwin');
+                    playFireworks();
+                } else {
+                    playSound('win');
+                }
+                
+                spawnFloatingCoins();
                 logMessage(`🎉 Выигрыш ${totalWin}! (${winDetails.join(' | ')})`, "text-emerald-400 font-bold");
             } else {
                 logMessage(`Спин (линий: ${activeLines}): без выигрыша`, "text-slate-500");
@@ -627,8 +695,9 @@
             clickedBtn.innerHTML = `<span class="text-yellow-400 font-black text-xl">x${prizeMultiplier}</span>`;
             clickedBtn.className = "bg-yellow-500/20 border-2 border-yellow-400 rounded-2xl p-2 flex items-center justify-center h-20 shadow-[0_0_20px_rgba(234,179,8,0.5)]";
 
-            playSound('win');
+            playSound('bigwin');
             playFireworks();
+            spawnFloatingCoins();
 
             bonusResultText.textContent = `🎁 Сундук #${boxIndex} принес x${prizeMultiplier} от ставки! Выигрыш: ${prizeWin}!`;
             
@@ -644,23 +713,23 @@
             
             const colors = ['#ec4899', '#eab308', '#06b6d4', '#a855f7', '#10b981'];
             
-            for (let i = 0; i < 35; i++) {
+            for (let i = 0; i < 40; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework-particle';
                 particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.left = `${40 + Math.random() * 20}%`;
-                particle.style.top = `${40 + Math.random() * 20}%`;
+                particle.style.left = `${30 + Math.random() * 40}%`;
+                particle.style.top = `${30 + Math.random() * 40}%`;
                 
                 const angle = Math.random() * Math.PI * 2;
-                const distance = 80 + Math.random() * 180;
+                const distance = 100 + Math.random() * 200;
                 const tx = Math.cos(angle) * distance;
                 const ty = Math.sin(angle) * distance;
                 
                 particle.animate([
                     { transform: 'translate(0, 0) scale(0.3)', opacity: 1 },
-                    { transform: `translate(${tx}px, ${ty}px) scale(1.5)`, opacity: 0 }
+                    { transform: `translate(${tx}px, ${ty}px) scale(1.6)`, opacity: 0 }
                 ], {
-                    duration: 900,
+                    duration: 1000,
                     easing: 'ease-out'
                 });
 
@@ -670,7 +739,24 @@
             setTimeout(() => {
                 fireworksContainer.classList.add('hidden');
                 fireworksContainer.innerHTML = '';
-            }, 900);
+            }, 1000);
+        }
+
+        function spawnFloatingCoins() {
+            coinsContainer.innerHTML = '';
+            const coinIcons = ['🪙', '💰', '⭐', '✨'];
+            for (let i = 0; i < 12; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'floating-coin';
+                coin.textContent = coinIcons[Math.floor(Math.random() * coinIcons.length)];
+                coin.style.left = `${35 + Math.random() * 30}%`;
+                coin.style.top = `${50 + Math.random() * 20}%`;
+                coin.style.animationDelay = `${Math.random() * 0.3}s`;
+                coinsContainer.appendChild(coin);
+            }
+            setTimeout(() => {
+                coinsContainer.innerHTML = '';
+            }, 1000);
         }
 
         function logMessage(text, colorClass = "text-slate-300") {
