@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chisinau Nights - Slots</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(185, 28, 28, 0.4), inset 0 0 15px rgba(217, 119, 6, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(220, 38, 38, 0.7), inset 0 0 25px rgba(245, 158, 11, 0.4); }
+        }
+        @keyframes win-glow {
+            0%, 100% { box-shadow: 0 0 30px rgba(250, 204, 21, 0.8), inset 0 0 30px rgba(250, 204, 21, 0.5); border-color: rgba(250, 204, 21, 1); }
+            50% { box-shadow: 0 0 60px rgba(253, 224, 71, 1), inset 0 0 50px rgba(253, 224, 71, 0.8); border-color: rgba(253, 224, 71, 1); }
+        }
+        @keyframes screen-shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-3px, 2px); }
+            40% { transform: translate(3px, -2px); }
+            60% { transform: translate(-2px, -1px); }
+            80% { transform: translate(2px, 2px); }
+        }
+        @keyframes expand-wild {
+            0% { transform: scale(0.5); opacity: 0; filter: drop-shadow(0 0 0px rgba(250, 204, 21, 0)); }
+            60% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.9)); }
+            100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.6)); }
+        }
+        @keyframes bonus-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 0 40px rgba(185, 28, 28, 0.5); }
+            50% { transform: scale(1.06); box-shadow: 0 0 35px rgba(250, 204, 21, 0.9), 0 0 60px rgba(239, 68, 68, 0.8); }
+        }
+        .expand-anim {
+            animation: expand-wild 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .neon-box {
+            animation: pulse-glow 3s infinite;
+        }
+        .win-active {
+            animation: win-glow 0.8s infinite alternate !important;
+        }
+        .shake-screen {
+            animation: screen-shake 0.4s ease-in-out;
+        }
+        .bonus-circle-btn {
+            animation: bonus-pulse 2s infinite ease-in-out;
+        }
+        .slot-reel {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .slot-reel::-webkit-scrollbar {
+            display: none;
+        }
+        .symbol {
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            user-select: none;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+            transition: transform 0.2s, filter 0.3s;
+        }
+        .symbol.dimmed {
+            opacity: 0.35;
+            filter: grayscale(60%) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+        }
+        .symbol.highlighted {
+            transform: scale(1.12);
+            filter: drop-shadow(0 0 15px rgba(250, 204, 21, 0.9));
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1.2); opacity: 0; }
+        }
+        .floating-coin {
+            position: absolute;
+            font-size: 1.8rem;
+            animation: float-up 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        .folk-pattern-bg {
+            background-image: repeating-linear-gradient(45deg, rgba(185, 28, 28, 0.08) 0, rgba(185, 28, 28, 0.08) 10px, transparent 0, transparent 20px);
+        }
+
+        /* Точный орнаментальный разделитель в стиле народной вышивки */
+        .folk-divider {
+            height: 16px;
+            width: 100%;
+            background-image: radial-gradient(#b91c1c 45%, transparent 46%), radial-gradient(#000000 45%, transparent 46%), radial-gradient(#dc2626 45%, transparent 46%);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 0, 4px 8px;
+            background-color: #1c1917;
+            background-repeat: repeat-x;
+            opacity: 0.9;
+            border-radius: 4px;
+            margin: 6px 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .monument-svg {
+            width: 72px;
+            height: 72px;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6));
+        }
+        .arch-svg {
+            width: 72px;
+            height: 72px;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6));
+        }
+    </style>
+</head>
+<body id="main-body" class="bg-gradient-to-b from-stone-950 via-red-950 to-stone-950 text-stone-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans relative overflow-x-hidden pb-20">
+
+    <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+        <div class="absolute top-10 left-10 w-96 h-96 bg-red-700 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-10 right-10 w-96 h-96 bg-amber-600 rounded-full blur-[140px]"></div>
+    </div>
+
+    <div id="coins-container" class="fixed inset-0 pointer-events-none z-40 overflow-hidden"></div>
+
+    <!-- Шапка -->
+    <header class="w-full max-w-2xl flex items-center justify-between my-2 z-10">
+        <div>
+            <div class="flex items-center gap-2">
+                <div class="px-2.5 h-9 rounded-xl bg-gradient-to-tr from-red-700 via-amber-600 to-yellow-500 flex items-center justify-center font-black text-stone-950 text-xs tracking-wider shadow-[0_0_15px_rgba(185,28,28,0.6)] border border-amber-300">
+                    CHIȘINĂU
+                </div>
+                <span class="text-2xl md:text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-300 to-yellow-400 drop-shadow-[0_2px_10px_rgba(245,158,11,0.4)]">
+                    NIGHTS
+                </span>
+            </div>
+            <p class="text-[11px] text-amber-200/70 tracking-wider mt-0.5 font-medium">True National Slot Machine Web App</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleModal(true)" title="Коэффициенты" class="bg-stone-900/90 border border-amber-500/30 hover:border-amber-400 text-amber-300 w-10 h-10 rounded-xl font-bold transition flex items-center justify-center text-lg shadow-lg backdrop-blur-md">
+                📜
+            </button>
+            <button id="music-toggle-btn" onclick="toggleBackgroundMusic()" title="Музыка" class="bg-stone-900/90 border border-red-500/40 hover:border-amber-400 text-amber-300 w-10 h-10 rounded-xl font-bold transition flex items-center justify-center text-lg shadow-lg backdrop-blur-md">
+                🔈
+            </button>
+        </div>
+    </header>
+
+    <!-- Основной контейнер игры -->
+    <main class="w-full max-w-2xl flex flex-col items-center my-auto gap-3 z-10">
+        
+        <!-- Индикатор режима Фри-спинов -->
+        <div id="free-spin-banner" class="w-full bg-gradient-to-r from-red-700 via-amber-600 to-red-700 text-stone-950 font-black py-1.5 px-4 rounded-xl text-center text-xs tracking-wider shadow-lg hidden border border-amber-300">
+            ✨ РЕЖИМ ФРИ-СПИНОВ: <span id="free-spins-count">0</span> осталось (Штефан чел Маре расширяется!) ✨
+        </div>
+
+        <!-- Табло статов без обводки -->
+        <div class="grid grid-cols-2 gap-4 w-full px-1">
+            <div class="bg-stone-900/80 rounded-xl p-3 text-center shadow-inner backdrop-blur-md relative overflow-hidden">
+                <div class="text-xs text-amber-200/70 uppercase tracking-wider">Баланс</div>
+                <div id="balance" class="text-2xl font-black text-emerald-400 mt-0.5 transition-all">1000</div>
+            </div>
+            <div class="bg-stone-900/80 rounded-xl p-3 text-center shadow-inner relative overflow-hidden backdrop-blur-md">
+                <div class="text-xs text-amber-200/70 uppercase tracking-wider">Выигрыш</div>
+                <div id="win-display" class="text-2xl font-black text-yellow-400 mt-0.5 transition-transform">0</div>
+            </div>
+        </div>
+
+        <div class="folk-divider"></div>
+
+        <!-- Игровой слот-бокс -->
+        <div id="slot-box" class="relative w-full bg-gradient-to-b from-stone-900 via-stone-950 to-stone-900 border-4 border-red-800 rounded-3xl p-3 shadow-[0_0_35px_rgba(185,28,28,0.3)] neon-box transition-all">
+            <div class="grid grid-cols-3 gap-2 bg-stone-950 p-3 rounded-2xl border border-red-900/40 overflow-hidden relative folk-pattern-bg">
+                <div class="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-stone-950 to-transparent pointer-events-none z-10"></div>
+                <div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-stone-950 to-transparent pointer-events-none z-10"></div>
+
+                <!-- Барабаны -->
+                <div class="slot-reel bg-stone-900/90 rounded-xl border border-red-900/50 flex flex-col items-center overflow-hidden relative h-[270px]">
+                    <div class="reel-track flex flex-col items-center transition-all duration-700 ease-out" id="reel-0">
+                        <div class="symbol" data-row="0" data-col="0">🍇</div><div class="symbol" data-row="1" data-col="0">🏺</div><div class="symbol" data-row="2" data-col="0">MONUMENT</div>
+                    </div>
+                </div>
+                <div class="slot-reel bg-stone-900/90 rounded-xl border border-red-900/50 flex flex-col items-center overflow-hidden relative h-[270px]">
+                    <div class="reel-track flex flex-col items-center transition-all duration-700 ease-out" id="reel-1">
+                        <div class="symbol" data-row="0" data-col="1">🍞</div><div class="symbol" data-row="1" data-col="1">ARCH</div><div class="symbol" data-row="2" data-col="1">🧶</div>
+                    </div>
+                </div>
+                <div class="slot-reel bg-stone-900/90 rounded-xl border border-red-900/50 flex flex-col items-center overflow-hidden relative h-[270px]">
+                    <div class="reel-track flex flex-col items-center transition-all duration-700 ease-out" id="reel-2">
+                        <div class="symbol" data-row="0" data-col="2">🍇</div><div class="symbol" data-row="1" data-col="2">🏺</div><div class="symbol" data-row="2" data-col="2">MONUMENT</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="folk-divider"></div>
+
+        <!-- Панель управления без обводки -->
+        <div class="w-full bg-stone-900/90 rounded-2xl p-4 flex flex-col gap-3 shadow-xl backdrop-blur-md relative">
+            
+            <div class="grid grid-cols-3 gap-2">
+                <!-- Линии -->
+                <div class="flex flex-col items-center justify-between bg-stone-950/80 p-2 rounded-xl">
+                    <span class="text-[10px] text-amber-200/70 font-medium mb-1">Линии</span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="changeLines(-1)" class="w-6 h-6 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold transition flex items-center justify-center text-xs">-</button>
+                        <span id="lines-display" class="w-5 text-center font-bold text-amber-400 text-xs">3</span>
+                        <button onclick="changeLines(1)" class="w-6 h-6 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold transition flex items-center justify-center text-xs">+</button>
+                    </div>
+                </div>
+
+                <!-- Ставка -->
+                <div class="flex flex-col items-center justify-between bg-stone-950/80 p-2 rounded-xl">
+                    <span class="text-[10px] text-amber-200/70 font-medium mb-1">Ставка</span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="changeBet(-5)" class="w-6 h-6 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold transition flex items-center justify-center text-xs">-</button>
+                        <span id="bet-display" class="w-6 text-center font-bold text-yellow-400 text-xs">10</span>
+                        <button onclick="changeBet(5)" class="w-6 h-6 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold transition flex items-center justify-center text-xs">+</button>
+                    </div>
+                </div>
+
+                <!-- Автоспины -->
+                <div class="flex flex-col items-center justify-between bg-stone-950/80 p-2 rounded-xl">
+                    <span class="text-[10px] text-amber-200/70 font-medium mb-1">Авто</span>
+                    <select id="auto-spins-select" onchange="updateUI()" class="bg-stone-900 border border-stone-700 rounded-lg px-2 py-0.5 text-xs text-stone-200 font-medium focus:outline-none w-full text-center">
+                        <option value="0">Выкл</option>
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="-1">∞</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Кнопка PLAY -->
+            <button id="spin-btn" onclick="handleSpinClick()" class="w-full h-12 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 hover:from-red-500 hover:to-yellow-400 text-stone-950 font-black text-xl shadow-lg shadow-red-900/40 active:scale-[0.98] transition flex items-center justify-center relative border border-amber-300">
+                <span id="spin-btn-text">30</span>
+                <span id="auto-counter" class="absolute top-2 right-4 text-[10px] bg-stone-950 text-amber-400 px-2 py-0.5 rounded-full font-bold hidden"></span>
+            </button>
+        </div>
+
+        <div class="folk-divider"></div>
+
+        <!-- История без обводки -->
+        <div class="w-full bg-stone-900/90 rounded-2xl p-3 shadow-xl backdrop-blur-md">
+            <h2 class="text-xs font-bold text-amber-400 mb-1.5 pb-1">Хроники Кишинева</h2>
+            <div id="game-log" class="h-20 overflow-y-auto space-y-1 text-xs pr-1 font-mono">
+                <div class="text-stone-500 italic">Сделайте ставку для вечерней прогулки по городу...</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Кнопка покупки бонуса -->
+    <div class="fixed bottom-5 right-5 z-40">
+        <button onclick="buyBonus()" title="Купить бонус" class="bonus-circle-btn w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-tr from-red-800 via-amber-600 to-yellow-400 hover:from-red-700 hover:to-yellow-300 text-stone-950 border-2 border-amber-200 shadow-2xl active:scale-95 transition-all flex flex-col items-center justify-center p-1 text-center cursor-pointer">
+            <span class="text-[9px] md:text-[10px] uppercase font-black tracking-tighter text-amber-950 leading-none">БОНУС</span>
+            <span id="bonus-cost-label" class="text-xs md:text-sm font-black font-mono text-stone-950 tracking-tight mt-0.5">330</span>
+        </button>
+    </div>
+
+    <!-- Модальное окно коэффициентов -->
+    <div id="paytable-modal" class="fixed inset-0 bg-stone-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-stone-900 border-2 border-red-800 rounded-3xl p-5 max-w-md w-full shadow-2xl relative max-h-[90vh] flex flex-col">
+            <button onclick="toggleModal(false)" class="absolute top-4 right-4 text-stone-400 hover:text-white text-lg font-bold w-8 h-8 flex items-center justify-center rounded-xl bg-stone-800/80">&times;</button>
+            
+            <h3 class="text-lg font-black text-amber-400 mb-3 tracking-wide">📜 Справочник и Коэффициенты</h3>
+            
+            <div class="space-y-2 text-xs font-mono overflow-y-auto pr-1 flex-grow mb-4">
+                <div class="bg-stone-950/70 p-2.5 rounded-xl border border-red-950 flex items-center gap-3">
+                    <div class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-stone-900 rounded-lg border border-amber-500/40">
+                        <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M38 38C36 38 32 42 36 46C39 48 44 44 45 42L43 38H38Z" fill="#d97706"/>
+                            <circle cx="35" cy="45" r="3.5" fill="#fde047"/>
+                            <path d="M43 14H57V20H43V14Z" fill="#fde047"/>
+                            <path d="M43 14L45 8L47.5 13L50 7L52.5 13L55 8L57 14H43Z" fill="#fde047"/>
+                        </svg>
+                    </div>
+                    <div class="flex-grow">
+                        <div class="font-bold text-amber-400 mb-0.5">Штефан чел Маре (Wild)</div>
+                        <div class="text-stone-300 font-sans text-[11px]">Заменяет любой символ (кроме Арки). Расширяется во фри-спинах.</div>
+                    </div>
+                    <div class="font-bold text-yellow-400 text-sm">x50</div>
+                </div>
+
+                <div class="bg-stone-950/70 p-2.5 rounded-xl border border-red-950 flex items-center gap-3">
+                    <div class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-stone-900 rounded-lg border border-orange-500/40">
+                        <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="20" y="30" width="15" height="60" fill="#78716c"/>
+                            <rect x="65" y="30" width="15" height="60" fill="#78716c"/>
+                            <path d="M15 30H85V38H15V30Z" fill="#a8a29e"/>
+                            <path d="M35 35C35 18 65 18 65 35H35Z" fill="#78716c"/>
+                            <circle cx="50" cy="26" r="6" fill="#fde047"/>
+                        </svg>
+                    </div>
+                    <div class="flex-grow">
+                        <div class="font-bold text-orange-400 mb-0.5">Арка Победы (Scatter)</div>
+                        <div class="text-stone-300 font-sans text-[11px]">3 Арки запускают 10 Фри-спинов.</div>
+                    </div>
+                    <div class="font-bold text-yellow-400 text-sm">x25</div>
+                </div>
+
+                <div class="bg-stone-950/60 p-2.5 rounded-xl border border-red-950 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🏺</span>
+                        <span class="font-bold text-amber-300 text-xs">Глиняный кувшин</span>
+                    </div>
+                    <span class="font-bold text-yellow-400">x25</span>
+                </div>
+
+                <div class="bg-stone-950/60 p-2.5 rounded-xl border border-red-950 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🧶</span>
+                        <span class="font-bold text-amber-300 text-xs">Народный ковер (КылИм)</span>
+                    </div>
+                    <span class="font-bold text-yellow-400">x15</span>
+                </div>
+
+                <div class="bg-stone-950/60 p-2.5 rounded-xl border border-red-950 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🍇</span>
+                        <span class="font-bold text-amber-300 text-xs">Гроздь винограда</span>
+                    </div>
+                    <span class="font-bold text-yellow-400">x10</span>
+                </div>
+
+                <div class="bg-stone-950/60 p-2.5 rounded-xl border border-red-950 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🍞</span>
+                        <span class="font-bold text-amber-300 text-xs">Плетеный хлеб (Калач)</span>
+                    </div>
+                    <span class="font-bold text-yellow-400">x5</span>
+                </div>
+            </div>
+
+            <button onclick="toggleModal(false)" class="w-full py-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold transition text-sm">
+                Понятно, закрыть
+            </button>
+        </div>
+    </div>
+
+    <!-- Модальное окно фри-спинов -->
+    <div id="freespins-modal" class="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-red-950 to-stone-900 border-2 border-amber-500 rounded-3xl p-6 max-w-md w-full shadow-[0_0_50px_rgba(185,28,28,0.5)] text-center relative">
+            <h2 class="text-2xl font-black text-amber-400 mb-2">АРКА ПОБЕДЫ ПОКОРЕНА!</h2>
+            <p class="text-sm text-stone-200 mb-4">Вам назначено **10 бесплатных вращений (Фри-спинов)**! Памятник Штефану чел Маре будет расширяться на весь барабан при выпадении.</p>
+            <button onclick="closeFreeSpinsModal()" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black transition text-sm">
+                Начать Фри-спины!
+            </button>
+        </div>
+    </div>
+
+    <!-- Игровая логика -->
+    <script>
+        const monumentSvgHtml = `<svg class="monument-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="kaftan-grad" x1="32" y1="30" x2="68" y2="80" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#b45309"/>
+                    <stop offset="50%" stop-color="#92400e"/>
+                    <stop offset="100%" stop-color="#451a03"/>
+                </linearGradient>
+                <linearGradient id="bronze" x1="30" y1="5" x2="70" y2="95" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#d97706"/>
+                    <stop offset="100%" stop-color="#78350f"/>
+                </linearGradient>
+                <linearGradient id="gold-accent" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+                    <stop offset="0%" stop-color="#fde047"/>
+                    <stop offset="100%" stop-color="#ca8a04"/>
+                </linearGradient>
+            </defs>
+            <path d="M22 88H78V93H22V88Z" fill="#57534e"/>
+            <path d="M26 80H74V88H26V80Z" fill="#a8a29e"/>
+            <path d="M39 72H45V80H39V72Z" fill="#292524"/>
+            <path d="M55 72H61V80H55V72Z" fill="#292524"/>
+            <path d="M45 56H55V74H45V56Z" fill="#a8a29e"/>
+            <path d="M38 38C38 36 39 34 43 34H57C61 34 62 36 62 38L64 74H36L38 38Z" fill="url(#kaftan-grad)"/>
+            <path d="M34 72H66V76H34V72Z" fill="#d6d3d1"/>
+            <path d="M40 62H45V68H40V62Z" fill="#78350f" stroke="#92400e" stroke-width="0.8"/>
+            <path d="M55 62H60V68H55V62Z" fill="#78350f" stroke="#92400e" stroke-width="0.8"/>
+            <circle cx="50" cy="36" r="1.2" fill="url(#gold-accent)"/>
+            <circle cx="50" cy="41" r="1.2" fill="url(#gold-accent)"/>
+            <circle cx="50" cy="46" r="1.2" fill="url(#gold-accent)"/>
+            <circle cx="50" cy="51" r="1.2" fill="url(#gold-accent)"/>
+            <circle cx="50" cy="56" r="1.2" fill="url(#gold-accent)"/>
+            <circle cx="50" cy="61" r="1.2" fill="url(#gold-accent)"/>
+            <circle cx="50" cy="66" r="1.2" fill="url(#gold-accent)"/>
+            <path d="M50 34V70" stroke="#78350f" stroke-width="1.2" stroke-dasharray="1.5 1.5"/>
+            <path d="M35 36C35 32 39 30 43 30H57C61 30 65 32 65 36L62 54H38L35 36Z" fill="url(#kaftan-grad)"/>
+            <path d="M38 38C36 38 32 42 36 46C39 48 44 44 45 42L43 38H38Z" fill="url(#bronze)"/>
+            <circle cx="35" cy="45" r="3.5" fill="url(#gold-accent)"/>
+            <path d="M62 34C64 34 68 28 64 20C62 16 58 18 56 22L59 34H62Z" fill="url(#bronze)"/>
+            <path d="M62 18L64 26H62V18Z" fill="url(#gold-accent)"/>
+            <path d="M58 10H68V13H58V10Z" fill="url(#gold-accent)"/>
+            <path d="M60 7H66V9H60V7Z" fill="url(#gold-accent)"/>
+            <path d="M59 15H67V17H59V15Z" fill="url(#gold-accent)"/>
+            <path d="M62 4H64V7H62V4Z" fill="url(#gold-accent)"/>
+            <path d="M47 28H53V32H47V28Z" fill="url(#bronze)"/>
+            <path d="M45 20H55V28H45V20Z" fill="url(#bronze)"/>
+            <path d="M43 14H57V20H43V14Z" fill="url(#gold-accent)"/>
+            <path d="M43 14L45 8L47.5 13L50 7L52.5 13L55 8L57 14H43Z" fill="url(#gold-accent)"/>
+        </svg>`;
+
+        const archSvgHtml = `<svg class="arch-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="30" width="15" height="60" fill="#78716c"/>
+            <rect x="65" y="30" width="15" height="60" fill="#78716c"/>
+            <path d="M15 30H85V38H15V30Z" fill="#a8a29e"/>
+            <path d="M35 35C35 18 65 18 65 35H35Z" fill="#78716c"/>
+            <circle cx="50" cy="26" r="6" fill="#fde047"/>
+            <path d="M10 88H90V94H10V88Z" fill="#57534e"/>
+        </svg>`;
+
+        const weightedSymbolPool = [
+            { sym: 'MONUMENT', weight: 8 },
+            { sym: 'ARCH', weight: 6 },
+            { sym: '🏺', weight: 15 },
+            { sym: '🧶', weight: 20 },
+            { sym: '🍇', weight: 26 },
+            { sym: '🍞', weight: 25 }
+        ];
+
+        let balance = 1000;
+        let lineBet = 10;
+        let activeLines = 3;
+        let isSpinning = false;
+        let autoSpinsLeft = 0;
+        
+        let freeSpinsLeft = 0;
+        let isFreeSpinActive = false;
+        let isMusicPlaying = false;
+        let musicTimer = null;
+
+        const balanceEl = document.getElementById('balance');
+        const winDisplayEl = document.getElementById('win-display');
+        const betDisplayEl = document.getElementById('bet-display');
+        const linesDisplayEl = document.getElementById('lines-display');
+        const spinBtnText = document.getElementById('spin-btn-text');
+        const spinBtn = document.getElementById('spin-btn');
+        const bonusCostLabel = document.getElementById('bonus-cost-label');
+        const gameLogEl = document.getElementById('game-log');
+        const modalEl = document.getElementById('paytable-modal');
+        const freespinsModalEl = document.getElementById('freespins-modal');
+        const freeSpinBanner = document.getElementById('free-spin-banner');
+        const freeSpinsCountEl = document.getElementById('free-spins-count');
+        const autoSelectEl = document.getElementById('auto-spins-select');
+        const autoCounterEl = document.getElementById('auto-counter');
+        const coinsContainer = document.getElementById('coins-container');
+        const slotBox = document.getElementById('slot-box');
+        const mainBody = document.getElementById('main-body');
+        const musicToggleBtn = document.getElementById('music-toggle-btn');
+
+        function renderSymbolContent(s) {
+            if (s === 'MONUMENT') return monumentSvgHtml;
+            if (s === 'ARCH') return archSvgHtml;
+            return s;
+        }
+
+        function toggleModal(show) {
+            modalEl.classList.toggle('hidden', !show);
+        }
+
+        function changeBet(amount) {
+            if (isSpinning || isFreeSpinActive) return;
+            lineBet = Math.max(5, Math.min(100, lineBet + amount));
+            updateUI();
+        }
+
+        function changeLines(amount) {
+            if (isSpinning || isFreeSpinActive) return;
+            activeLines = Math.max(1, Math.min(5, activeLines + amount));
+            updateUI();
+        }
+
+        function updateUI() {
+            betDisplayEl.textContent = lineBet;
+            linesDisplayEl.textContent = activeLines;
+            if (!isFreeSpinActive) {
+                spinBtnText.textContent = lineBet * activeLines;
+            }
+            const totalBet = lineBet * activeLines;
+            bonusCostLabel.textContent = totalBet * 33;
+        }
+
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'tick') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.05);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
+                } else if (type === 'win') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.12);
+                    osc.frequency.setValueAtTime(783.99, now + 0.24);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now); osc.stop(now + 0.6);
+                } else if (type === 'bonus') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(660, now + 0.2);
+                    osc.frequency.setValueAtTime(880, now + 0.4);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+                    osc.start(now); osc.stop(now + 0.8);
+                }
+            } catch (e) {}
+        }
+
+        const fluerMelody = [
+            587.33, 659.25, 698.46, 783.99, 880.00, 783.99, 698.46, 659.25,
+            523.25, 587.33, 659.25, 587.33, 523.25, 440.00, 523.25, 587.33
+        ];
+        let noteIndex = 0;
+
+        function playFluerBeat() {
+            if (!isMusicPlaying) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'triangle';
+                const freq = fluerMelody[noteIndex % fluerMelody.length];
+                osc.frequency.setValueAtTime(freq, now);
+                
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(now);
+                osc.stop(now + 0.28);
+                
+                noteIndex++;
+            } catch (e) {}
+        }
+
+        function toggleBackgroundMusic() {
+            isMusicPlaying = !isMusicPlaying;
+            if (isMusicPlaying) {
+                musicToggleBtn.textContent = "🔊";
+                musicToggleBtn.classList.add('border-amber-400', 'text-amber-300');
+                getAudioContext();
+                if (musicTimer) clearInterval(musicTimer);
+                musicTimer = setInterval(playFluerBeat, 300);
+            } else {
+                musicToggleBtn.textContent = "🔈";
+                musicToggleBtn.classList.remove('border-amber-400', 'text-amber-300');
+                if (musicTimer) clearInterval(musicTimer);
+            }
+        }
+
+        function handleSpinClick() {
+            if (isSpinning) return;
+            
+            if (!isFreeSpinActive) {
+                const totalCost = lineBet * activeLines;
+                if (balance < totalCost) {
+                    logMessage("❌ Недостаточно средств для прогулки!", "text-red-400");
+                    stopAutoSpins();
+                    return;
+                }
+                balance -= totalCost;
+                balanceEl.textContent = balance;
+            }
+
+            spin();
+        }
+
+        function buyBonus() {
+            if (isSpinning || isFreeSpinActive) return;
+            const totalBet = lineBet * activeLines;
+            const bonusCost = totalBet * 33;
+            if (balance < bonusCost) {
+                logMessage("❌ Недостаточно средств для покупки бонуса!", "text-red-400");
+                return;
+            }
+            balance -= bonusCost;
+            balanceEl.textContent = balance;
+            stopAutoSpins();
+            triggerFreeSpins();
+        }
+
+        function stopAutoSpins() {
+            autoSpinsLeft = 0;
+            autoSelectEl.value = "0";
+            autoCounterEl.classList.add('hidden');
+            updateUI();
+        }
+
+        function getRandSym() {
+            const totalWeight = weightedSymbolPool.reduce((sum, item) => sum + item.weight, 0);
+            let randomNum = Math.random() * totalWeight;
+            for (let item of weightedSymbolPool) {
+                if (randomNum < item.weight) return item.sym;
+                randomNum -= item.weight;
+            }
+            return '🍇';
+        }
+
+        function generateSpinResult() {
+            let matrix = [
+                [getRandSym(), getRandSym(), getRandSym()],
+                [getRandSym(), getRandSym(), getRandSym()],
+                [getRandSym(), getRandSym(), getRandSym()]
+            ];
+            return matrix;
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.symbol').forEach(el => {
+                el.classList.remove('highlighted', 'dimmed', 'expand-anim');
+            });
+        }
+
+        function spin() {
+            if (isSpinning) return;
+            isSpinning = true;
+            winDisplayEl.textContent = "0";
+            slotBox.classList.remove('win-active');
+            clearHighlights();
+
+            const reelsResult = generateSpinResult();
+
+            for (let i = 0; i < 3; i++) {
+                const track = document.getElementById(`reel-${i}`);
+                let html = '';
+                for (let k = 0; k < 12; k++) {
+                    html += `<div class="symbol">${renderSymbolContent(getRandSym())}</div>`;
+                }
+                html += `<div class="symbol" data-row="0" data-col="${i}">${renderSymbolContent(reelsResult[i][0])}</div>`;
+                html += `<div class="symbol" data-row="1" data-col="${i}">${renderSymbolContent(reelsResult[i][1])}</div>`;
+                html += `<div class="symbol" data-row="2" data-col="${i}">${renderSymbolContent(reelsResult[i][2])}</div>`;
+
+                track.innerHTML = html;
+                track.style.transition = 'none';
+                track.style.transform = 'translateY(0px)';
+                track.offsetHeight;
+
+                const duration = 600 + i * 300;
+                track.style.transition = `transform ${duration}ms cubic-bezier(0.15, 0.85, 0.35, 1.0)`;
+                track.style.transform = `translateY(-1080px)`;
+
+                let ticks = 0;
+                const tickInterval = setInterval(() => {
+                    playSound('tick');
+                    ticks++;
+                    if (ticks > (6 + i * 3)) clearInterval(tickInterval);
+                }, 90);
+            }
+
+            setTimeout(() => {
+                let hasWild = false;
+                if (isFreeSpinActive) {
+                    reelsResult.forEach(reel => {
+                        if (reel.includes('MONUMENT')) hasWild = true;
+                    });
+                }
+
+                evaluateWins(reelsResult);
+
+                if (hasWild) {
+                    setTimeout(() => {
+                        reelsResult.forEach((reel, colIdx) => {
+                            if (reel.includes('MONUMENT')) {
+                                reel[0] = 'MONUMENT';
+                                reel[1] = 'MONUMENT';
+                                reel[2] = 'MONUMENT';
+                                
+                                const track = document.getElementById(`reel-${colIdx}`);
+                                const symbols = track.querySelectorAll('.symbol');
+                                const visibleSymbols = [symbols[symbols.length - 3], symbols[symbols.length - 2], symbols[symbols.length - 1]];
+                                
+                                visibleSymbols.forEach(symEl => {
+                                    symEl.innerHTML = monumentSvgHtml;
+                                    symEl.classList.add('expand-anim');
+                                });
+                            }
+                        });
+                        playSound('bonus');
+                        evaluateWins(reelsResult, true);
+                    }, 450);
+                }
+
+                isSpinning = false;
+
+                if (balance <= 0 && !isFreeSpinActive) {
+                    balance = 200;
+                    balanceEl.textContent = balance;
+                    logMessage("🎁 Податок мэрии: +200 кредитов!", "text-amber-400");
+                    stopAutoSpins();
+                    return;
+                }
+
+                if (isFreeSpinActive) {
+                    freeSpinsLeft--;
+                    freeSpinsCountEl.textContent = freeSpinsLeft;
+                    
+                    // Пауза увеличена на 2 секунды (теперь 3000 мс вместо 1000 мс)
+                    const extraDelay = 3000;
+                    if (freeSpinsLeft > 0) {
+                        setTimeout(spin, extraDelay);
+                        return;
+                    } else {
+                        isFreeSpinActive = false;
+                        freeSpinBanner.classList.add('hidden');
+                        logMessage("🏁 Режим фри-спинов завершен.", "text-amber-400 font-bold");
+                    }
+                }
+
+                if (autoSpinsLeft > 0 || autoSpinsLeft === -1) {
+                    if (autoSpinsLeft > 0) autoSpinsLeft--;
+                    autoCounterEl.textContent = autoSpinsLeft === -1 ? "∞" : autoSpinsLeft;
+                    autoCounterEl.classList.remove('hidden');
+
+                    if (autoSpinsLeft === 0 && autoSpinsLeft !== -1) {
+                        stopAutoSpins();
+                    } else {
+                        setTimeout(spin, 500);
+                    }
+                } else {
+                    stopAutoSpins();
+                }
+            }, 1300);
+        }
+
+        function evaluateWins(matrix, isExpandedCheck = false) {
+            let totalWin = 0;
+            let winDetails = [];
+            let winningCoords = [];
+
+            let scatterCount = 0;
+            matrix.forEach(col => col.forEach(s => { if(s === 'ARCH') scatterCount++; }));
+
+            if (scatterCount >= 3 && !isFreeSpinActive && !isExpandedCheck) {
+                triggerFreeSpins();
+                return;
+            }
+
+            const allLines = [
+                { id: 0, name: "Верхняя", coords: [[0,0], [0,1], [0,2]], symbols: [matrix[0][0], matrix[1][0], matrix[2][0]] },
+                { id: 1, name: "Центральная", coords: [[1,0], [1,1], [1,2]], symbols: [matrix[0][1], matrix[1][1], matrix[2][1]] },
+                { id: 2, name: "Нижняя", coords: [[2,0], [2,1], [2,2]], symbols: [matrix[0][2], matrix[1][2], matrix[2][2]] },
+                { id: 3, name: "Диагональ ↘", coords: [[0,0], [1,1], [2,2]], symbols: [matrix[0][0], matrix[1][1], matrix[2][2]] },
+                { id: 4, name: "Диагональ ↗", coords: [[2,0], [1,1], [0,2]], symbols: [matrix[0][2], matrix[1][1], matrix[2][0]] }
+            ];
+
+            const baseMultipliers = { 'MONUMENT': 50, 'ARCH': 25, '🏺': 25, '🧶': 15, '🍇': 10, '🍞': 5 };
+
+            for (let i = 0; i < activeLines; i++) {
+                let line = allLines[i];
+                let [s1, s2, s3] = line.symbols;
+                let multiplier = 0;
+                let winDesc = "";
+
+                let targetSym = null;
+                if (s1 !== 'MONUMENT' && s1 !== 'ARCH') targetSym = s1;
+                else if (s2 !== 'MONUMENT' && s2 !== 'ARCH') targetSym = s2;
+                else if (s3 !== 'MONUMENT' && s3 !== 'ARCH') targetSym = s3;
+                else targetSym = 'MONUMENT';
+
+                const m1 = (s1 === targetSym || s1 === 'MONUMENT');
+                const m2 = (s2 === targetSym || s2 === 'MONUMENT');
+                const m3 = (s3 === targetSym || s3 === 'MONUMENT');
+
+                if (m1 && m2 && m3) {
+                    multiplier = baseMultipliers[targetSym] || 10;
+                    let descName = targetSym === 'MONUMENT' ? 'Штефан' : (targetSym === 'ARCH' ? 'Арка' : targetSym);
+                    winDesc = `3 в ряд (${descName}, x${multiplier})`;
+                }
+
+                if (multiplier > 0) {
+                    const lineWin = lineBet * multiplier;
+                    totalWin += lineWin;
+                    winDetails.push(`${line.name}: ${winDesc} [+${lineWin}]`);
+                    winningCoords.push(...line.coords);
+                }
+            }
+
+            if (totalWin > 0) {
+                balance += totalWin;
+                balanceEl.textContent = balance;
+                winDisplayEl.textContent = totalWin;
+                
+                slotBox.classList.add('win-active');
+                mainBody.classList.add('shake-screen');
+                setTimeout(() => mainBody.classList.remove('shake-screen'), 400);
+
+                document.querySelectorAll('.symbol').forEach(el => {
+                    const r = parseInt(el.getAttribute('data-row'));
+                    const c = parseInt(el.getAttribute('data-col'));
+                    const isWinning = winningCoords.some(coord => coord[0] === r && coord[1] === c);
+                    if (isWinning) {
+                        el.classList.add('highlighted');
+                    } else {
+                        el.classList.add('dimmed');
+                    }
+                });
+
+                playSound('win');
+                spawnFloatingCoins();
+                logMessage(`🎉 Выигрыш в Кишиневе: ${totalWin}! (${winDetails.join(' | ')})`, "text-emerald-400 font-bold");
+            } else if (!isExpandedCheck) {
+                logMessage(`Прогулка по линии: тихо`, "text-stone-500");
+            }
+        }
+
+        function triggerFreeSpins() {
+            playSound('bonus');
+            stopAutoSpins();
+            freespinsModalEl.classList.remove('hidden');
+            logMessage(`🌟 ТРИ АРКИ ПОБЕДЫ! Запуск Фри-спинов!`, "text-amber-400 font-bold");
+        }
+
+        function closeFreeSpinsModal() {
+            freespinsModalEl.classList.add('hidden');
+            isFreeSpinActive = true;
+            freeSpinsLeft = 10;
+            freeSpinsCountEl.textContent = freeSpinsLeft;
+            freeSpinBanner.classList.remove('hidden');
+            spinBtnText.textContent = "FREE";
+            spin();
+        }
+
+        function spawnFloatingCoins() {
+            coinsContainer.innerHTML = '';
+            const coinIcons = ['🍇', '🏺', '⭐', '🪙'];
+            for (let i = 0; i < 12; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'floating-coin';
+                coin.textContent = coinIcons[Math.floor(Math.random() * coinIcons.length)];
+                coin.style.left = `${35 + Math.random() * 30}%`;
+                coin.style.top = `${50 + Math.random() * 20}%`;
+                coin.style.animationDelay = `${Math.random() * 0.3}s`;
+                coinsContainer.appendChild(coin);
+            }
+            setTimeout(() => { coinsContainer.innerHTML = ''; }, 1000);
+        }
+
+        function logMessage(text, colorClass = "text-stone-300") {
+            const p = document.createElement('div');
+            p.className = `p-1.5 rounded bg-stone-950/70 ${colorClass}`;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+            gameLogEl.prepend(p);
+            if (gameLogEl.children.length > 20) gameLogEl.removeChild(gameLogEl.lastChild);
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
