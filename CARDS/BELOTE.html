@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>БЕЛОТ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle, #2c3e50 0%, #1a252f 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            max-width: 520px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Панель управления */
+        .controls-panel {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toggle-group {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            min-width: 32px;
+        }
+
+        .toggle-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .toggle-btn.active {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        /* Информационная панель команд */
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px 14px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .trump-badge {
+            font-size: 1.1rem;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .status {
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #00e676;
+            min-height: 20px;
+        }
+
+        /* Игровой стол */
+        .table-area {
+            width: 100%;
+            height: 210px;
+            background: rgba(34, 139, 34, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+
+        /* Зона розыгрыша взяток */
+        .trick-zone {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+        }
+
+        /* Панель торгов */
+        .bidding-panel {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* Соперники / Напарники */
+        .bots-info {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 0.82rem;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .bot-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .bot-badge.active-turn {
+            border: 1px solid #00e676;
+            color: #00e676;
+        }
+
+        /* Карты */
+        .card {
+            width: 52px;
+            height: 78px;
+            background: #ffffff;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3px 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .card.red { color: #d32f2f; }
+        .card.black { color: #212121; }
+
+        .card:hover {
+            transform: translateY(-6px);
+        }
+
+        .card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .card.disabled:hover {
+            transform: none;
+        }
+
+        /* Рука игрока */
+        .hand-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            min-height: 85px;
+            margin-bottom: 10px;
+        }
+
+        .hand {
+            display: flex;
+        }
+
+        .hand .card {
+            margin-left: -16px;
+        }
+
+        .hand .card:first-child {
+            margin-left: 0;
+        }
+
+        /* Кнопки действий */
+        .actions-panel {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-icon {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>БЕЛОТ</h1>
+
+        <!-- Панель управления -->
+        <div class="controls-panel">
+            <!-- Режим игроков: 1v1 или 2v2 -->
+            <div class="toggle-group" id="players-toggle">
+                <button class="toggle-btn active" onclick="setPlayerMode(2)" title="1 на 1">1v1</button>
+                <button class="toggle-btn" onclick="setPlayerMode(4)" title="2 на 2">2v2</button>
+            </div>
+
+            <!-- Сложность: 🥉 / 🥈 / 🥇 -->
+            <div class="toggle-group" id="diff-toggle">
+                <button class="toggle-btn" onclick="setDifficulty('easy')" title="Новичок">🥉</button>
+                <button class="toggle-btn active" onclick="setDifficulty('medium')" title="Любитель">🥈</button>
+                <button class="toggle-btn" onclick="setDifficulty('hard')" title="Опытный">🥇</button>
+            </div>
+        </div>
+
+        <!-- Табло счета -->
+        <div class="score-board">
+            <div>Мы: <span id="team1-score">0</span> / 501</div>
+            <div id="trump-badge" class="trump-badge">Козырь: —</div>
+            <div>Они: <span id="team2-score">0</span> / 501</div>
+        </div>
+
+        <!-- Боты на столе -->
+        <div id="bots-info" class="bots-info"></div>
+
+        <div id="status" class="status">Раздача карт...</div>
+
+        <!-- Игровой стол -->
+        <div class="table-area">
+            <div id="trick-zone" class="trick-zone"></div>
+        </div>
+
+        <!-- Торги -->
+        <div id="bidding-panel" class="bidding-panel" style="display: none;">
+            <button class="btn-action" onclick="playerTakeTrump()">Взять козырь</button>
+            <button class="btn-action" onclick="playerPassTrump()">Пасс</button>
+        </div>
+
+        <!-- Рука игрока -->
+        <div class="hand-container">
+            <div id="player-hand" class="hand"></div>
+        </div>
+
+        <!-- Панель действий -->
+        <div class="actions-panel">
+            <button class="btn-action btn-icon" onclick="resetGame()" title="Новая игра">🔄</button>
+        </div>
+    </div>
+
+    <script>
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const RANKS = ['7', '8', '9', 'J', 'Q', 'K', '10', 'A'];
+
+        const NON_TRUMP_VALUES = { '7': 0, '8': 0, '9': 0, 'J': 2, 'Q': 3, 'K': 4, '10': 10, 'A': 11 };
+        const TRUMP_VALUES = { '7': 0, '8': 0, '9': 14, 'J': 20, 'Q': 3, 'K': 4, '10': 10, 'A': 11 };
+
+        const NON_TRUMP_RANK = { '7': 1, '8': 2, '9': 3, 'J': 4, 'Q': 5, 'K': 6, '10': 7, 'A': 8 };
+        const TRUMP_RANK = { '7': 1, '8': 2, 'Q': 3, 'K': 4, '10': 5, 'A': 6, '9': 7, 'J': 8 };
+
+        let numPlayers = 2; // 2 или 4
+        let difficulty = 'medium';
+
+        let deck = [];
+        let playerHand = [];
+        let botHands = []; // Для ботов 1, 2, 3
+        let currentTrick = []; // [{ playerIdx, card }]
+
+        let team1Score = 0; // Игрок (+ Напарник Бот 2 в 2v2)
+        let team2Score = 0; // Соперники Боты
+
+        let team1RoundPts = 0;
+        let team2RoundPts = 0;
+
+        let trumpSuit = null;
+        let takerIdx = 0;
+        let turnIdx = 0;
+        let proposedTrumpCard = null;
+
+        function setPlayerMode(count) {
+            numPlayers = count;
+            const btns = document.querySelectorAll('#players-toggle .toggle-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            if (count === 2) btns[0].classList.add('active');
+            if (count === 4) btns[1].classList.add('active');
+            resetGame();
+        }
+
+        function setDifficulty(diff) {
+            difficulty = diff;
+            const btns = document.querySelectorAll('#diff-toggle .toggle-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            if (diff === 'easy') btns[0].classList.add('active');
+            if (diff === 'medium') btns[1].classList.add('active');
+            if (diff === 'hard') btns[2].classList.add('active');
+        }
+
+        function createDeck() {
+            deck = [];
+            for (let suit of SUITS) {
+                for (let rank of RANKS) {
+                    deck.push({ suit, rank, isRed: suit === '♥' || suit === '♦' });
+                }
+            }
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function startRound() {
+            createDeck();
+            team1RoundPts = 0;
+            team2RoundPts = 0;
+            currentTrick = [];
+            trumpSuit = null;
+            turnIdx = 0;
+
+            playerHand = deck.splice(0, 5);
+            botHands = [];
+            for (let i = 1; i < numPlayers; i++) {
+                botHands.push(deck.splice(0, 5));
+            }
+
+            proposedTrumpCard = deck.pop();
+
+            document.getElementById('bidding-panel').style.display = 'flex';
+            document.getElementById('status').textContent = 'Торги за козырь';
+            document.getElementById('trump-badge').textContent = `Козырь: ${proposedTrumpCard.rank}${proposedTrumpCard.suit}?`;
+
+            renderBotsInfo();
+            renderTable();
+            renderPlayerHand();
+        }
+
+        function playerTakeTrump() {
+            trumpSuit = proposedTrumpCard.suit;
+            takerIdx = 0;
+            finishDeal();
+        }
+
+        function playerPassTrump() {
+            // Боты принимают решение по очереди
+            let took = false;
+            for (let i = 1; i < numPlayers; i++) {
+                let hand = botHands[i - 1];
+                let hasGoodTrump = hand.some(c => c.suit === proposedTrumpCard.suit && (c.rank === 'J' || c.rank === '9'));
+                if (hasGoodTrump || Math.random() < 0.35) {
+                    trumpSuit = proposedTrumpCard.suit;
+                    takerIdx = i;
+                    took = true;
+                    alert(`Бот ${i} взял козырь: ${trumpSuit}`);
+                    break;
+                }
+            }
+
+            if (took) {
+                finishDeal();
+            } else {
+                alert('Все пасовали! Перераздача.');
+                startRound();
+            }
+        }
+
+        function finishDeal() {
+            document.getElementById('bidding-panel').style.display = 'none';
+            document.getElementById('trump-badge').textContent = `Козырь: ${trumpSuit}`;
+
+            // Раздаем оставшиеся карты
+            if (takerIdx === 0) playerHand.push(proposedTrumpCard);
+            else botHands[takerIdx - 1].push(proposedTrumpCard);
+
+            playerHand.push(...deck.splice(0, takerIdx === 0 ? 2 : 3));
+
+            for (let i = 1; i < numPlayers; i++) {
+                botHands[i - 1].push(...deck.splice(0, takerIdx === i ? 2 : 3));
+            }
+
+            document.getElementById('status').textContent = 'Ваш ход';
+            renderBotsInfo();
+            renderPlayerHand();
+        }
+
+        function renderBotsInfo() {
+            const container = document.getElementById('bots-info');
+            container.innerHTML = '';
+            for (let i = 1; i < numPlayers; i++) {
+                const badge = document.createElement('div');
+                badge.className = `bot-badge ${turnIdx === i ? 'active-turn' : ''}`;
+                let role = (numPlayers === 4 && i === 2) ? '(Напарник)' : '(Соперник)';
+                badge.textContent = `Бот ${i} ${role}: ${botHands[i - 1] ? botHands[i - 1].length : 0}к.`;
+                container.appendChild(badge);
+            }
+        }
+
+        function renderTable() {
+            const zone = document.getElementById('trick-zone');
+            zone.innerHTML = '';
+
+            if (!trumpSuit && proposedTrumpCard) {
+                zone.appendChild(createCardEl(proposedTrumpCard));
+                return;
+            }
+
+            currentTrick.forEach(play => {
+                zone.appendChild(createCardEl(play.card));
+            });
+        }
+
+        function createCardEl(card) {
+            const cardEl = document.createElement('div');
+            cardEl.className = `card ${card.isRed ? 'red' : 'black'}`;
+            cardEl.innerHTML = `<div>${card.rank}</div><div style="font-size:1.2rem; text-align:center;">${card.suit}</div><div style="text-align:right;">${card.rank}</div>`;
+            return cardEl;
+        }
+
+        function renderPlayerHand() {
+            const handEl = document.getElementById('player-hand');
+            handEl.innerHTML = '';
+
+            playerHand.sort((a,b) => (a.suit === trumpSuit ? TRUMP_RANK[a.rank] + 20 : NON_TRUMP_RANK[a.rank]) - (b.suit === trumpSuit ? TRUMP_RANK[b.rank] + 20 : NON_TRUMP_RANK[b.rank]));
+
+            playerHand.forEach((card, index) => {
+                const cardEl = createCardEl(card);
+                if (turnIdx === 0 && trumpSuit) {
+                    let isValid = isValidPlay(card, playerHand);
+                    if (!isValid) cardEl.classList.add('disabled');
+                    else cardEl.addEventListener('click', () => playerPlayCard(index));
+                }
+                handEl.appendChild(cardEl);
+            });
+        }
+
+        function isValidPlay(card, hand) {
+            if (currentTrick.length === 0) return true;
+
+            const leadCard = currentTrick[0].card;
+            const hasLeadSuit = hand.some(c => c.suit === leadCard.suit);
+
+            if (hasLeadSuit) {
+                return card.suit === leadCard.suit;
+            }
+
+            const hasTrump = hand.some(c => c.suit === trumpSuit);
+            if (hasTrump) {
+                return card.suit === trumpSuit;
+            }
+
+            return true;
+        }
+
+        function playerPlayCard(index) {
+            const card = playerHand.splice(index, 1)[0];
+            currentTrick.push({ playerIdx: 0, card });
+            renderTable();
+            renderPlayerHand();
+
+            advanceTurn();
+        }
+
+        function botPlayCard(bIdx) {
+            let hand = botHands[bIdx - 1];
+            let validCards = hand.filter(c => isValidPlay(c, hand));
+
+            let card = validCards[Math.floor(Math.random() * validCards.length)];
+            hand.splice(hand.indexOf(card), 1);
+
+            currentTrick.push({ playerIdx: bIdx, card });
+            renderTable();
+            renderBotsInfo();
+
+            advanceTurn();
+        }
+
+        function advanceTurn() {
+            if (currentTrick.length === numPlayers) {
+                evaluateTrick();
+            } else {
+                turnIdx = (turnIdx + 1) % numPlayers;
+                renderBotsInfo();
+
+                if (turnIdx !== 0) {
+                    document.getElementById('status').textContent = `Ход Бота ${turnIdx}...`;
+                    setTimeout(() => botPlayCard(turnIdx), 600);
+                } else {
+                    document.getElementById('status').textContent = 'Ваш ход';
+                    renderPlayerHand();
+                }
+            }
+        }
+
+        function evaluateTrick() {
+            let leadCard = currentTrick[0].card;
+            let winningPlay = currentTrick[0];
+
+            currentTrick.forEach(play => {
+                let c = play.card;
+                let w = winningPlay.card;
+
+                if (c.suit === trumpSuit && w.suit !== trumpSuit) {
+                    winningPlay = play;
+                } else if (c.suit === w.suit) {
+                    let rankMap = c.suit === trumpSuit ? TRUMP_RANK : NON_TRUMP_RANK;
+                    if (rankMap[c.rank] > rankMap[w.rank]) winningPlay = play;
+                }
+            });
+
+            // Подсчет очков
+            let trickPoints = 0;
+            currentTrick.forEach(p => {
+                trickPoints += p.card.suit === trumpSuit ? TRUMP_VALUES[p.card.rank] : NON_TRUMP_VALUES[p.card.rank];
+            });
+
+            let winnerIdx = winningPlay.playerIdx;
+            let isTeam1 = (winnerIdx === 0 || (numPlayers === 4 && winnerIdx === 2));
+
+            if (isTeam1) team1RoundPts += trickPoints;
+            else team2RoundPts += trickPoints;
+
+            turnIdx = winnerIdx;
+
+            setTimeout(() => {
+                currentTrick = [];
+                renderTable();
+
+                if (playerHand.length === 0) {
+                    endRound();
+                } else {
+                    document.getElementById('status').textContent = isTeam1 ? 'Взятка ваша!' : 'Взятка соперников!';
+                    renderBotsInfo();
+                    if (turnIdx !== 0) setTimeout(() => botPlayCard(turnIdx), 600);
+                    else {
+                        document.getElementById('status').textContent = 'Ваш ход';
+                        renderPlayerHand();
+                    }
+                }
+            }, 1000);
+        }
+
+        function endRound() {
+            team1Score += team1RoundPts;
+            team2Score += team2RoundPts;
+
+            document.getElementById('team1-score').textContent = team1Score;
+            document.getElementById('team2-score').textContent = team2Score;
+
+            if (team1Score >= 501 || team2Score >= 501) {
+                document.getElementById('status').textContent = team1Score > team2Score ? '🎉 Ваша команда победила!' : '🤖 Команда ботов победила!';
+            } else {
+                alert(`Раунд завершен!\nМы: ${team1RoundPts}\nОни: ${team2RoundPts}`);
+                startRound();
+            }
+        }
+
+        function resetGame() {
+            team1Score = 0;
+            team2Score = 0;
+            document.getElementById('team1-score').textContent = '0';
+            document.getElementById('team2-score').textContent = '0';
+            startRound();
+        }
+
+        startRound();
+    </script>
+</body>
+</html>
