@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ•ART ROYAL FRUITS</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', 'Segoe UI', serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0f2b22 0%, #030805 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px;
+            overflow-x: hidden;
+        }
+
+        #fx-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .game-container {
+            background: radial-gradient(ellipse at center, rgba(14, 65, 47, 0.98) 0%, rgba(2, 12, 8, 0.99) 100%);
+            border: 4px solid #d4af37;
+            border-radius: 20px;
+            padding: 14px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.95), inset 0 0 35px rgba(212, 175, 55, 0.3);
+            max-width: 460px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+            padding-bottom: 6px;
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 10px rgba(212,175,55,0.4);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        h1 span.fruits-highlight {
+            color: #ffe57f;
+            text-shadow: 0 0 12px #ffd700, 0 0 20px #ff6f00;
+            font-weight: 900;
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 1px solid #fff5cc;
+            color: #030805;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            transition: transform 0.1s;
+        }
+        .btn-action:active { transform: translateY(2px); }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1.5px solid rgba(212, 175, 55, 0.4);
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+            font-weight: bold;
+        }
+
+        .stats-bar span { color: #ffd700; font-size: 1rem; }
+
+        .status-message {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #00e676;
+            min-height: 24px;
+            margin-bottom: 10px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+
+        .slot-machine-body {
+            width: 100%;
+            background: linear-gradient(180deg, #071f16 0%, #030a07 100%);
+            border: 4px solid #8a671c;
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.95), 0 12px 25px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .reels-window {
+            width: 100%;
+            height: 240px;
+            background: linear-gradient(180deg, #020805 0%, #0b3022 50%, #020805 100%);
+            border: 3.5px solid #d4af37;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.95);
+        }
+
+        /* Линии выигрыша на заднем плане (z-index: 10) */
+        .win-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 0px;
+            background: transparent;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease, height 0.3s ease;
+        }
+        .win-line.line-0 { top: 40px; }
+        .win-line.line-1 { top: 120px; }
+        .win-line.line-2 { top: 200px; }
+
+        .win-line.temp-highlight {
+            opacity: 1;
+            height: 4px;
+            background: rgba(255, 215, 0, 0.95);
+            box-shadow: 0 0 12px #ffd700, 0 0 20px #ff6f00;
+        }
+
+        @keyframes pulseWin {
+            0% { background: #ffd700; box-shadow: 0 0 15px #ffd700, 0 0 25px #00e676; }
+            50% { background: #00e676; box-shadow: 0 0 25px #00e676, 0 0 35px #ffd700; }
+            100% { background: #ffd700; box-shadow: 0 0 15px #ffd700, 0 0 25px #00e676; }
+        }
+
+        .win-line.active-win {
+            opacity: 1;
+            animation: pulseWin 0.6s infinite alternate;
+            height: 6px;
+            z-index: 10; /* Линии остаются на заднем плане */
+        }
+
+        .reel {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            position: relative;
+            border-right: 1.5px solid rgba(212, 175, 55, 0.25);
+        }
+        .reel:last-child { border-right: none; }
+
+        /* Фрукты отображаются СТРОГО ПОВЕРХ линий благодаря z-index: 30 */
+        .symbol {
+            height: 80px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            position: relative;
+            z-index: 30;
+            filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.4));
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes winBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3) rotate(6deg); }
+            100% { transform: scale(1); }
+        }
+
+        .symbol.winning {
+            animation: winBounce 0.5s ease infinite alternate;
+            z-index: 40; /* Выигравшие фрукты поверх всего */
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            font-size: 0.78rem;
+            align-items: center;
+        }
+
+        .lines-selector {
+            display: flex;
+            gap: 6px;
+        }
+
+        .line-btn {
+            background: linear-gradient(180deg, #163e2e 0%, #081d15 100%);
+            border: 1.5px solid #d4af37;
+            color: #ccc;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transition: all 0.15s ease;
+        }
+        .line-btn.active {
+            background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+            color: #030805;
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,215,0,0.6);
+        }
+
+        .bets-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .bet-btn {
+            background: linear-gradient(180deg, #2b1f0d 0%, #120d05 100%);
+            border: 2px solid #d4af37;
+            color: #ffd700;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            transition: all 0.15s ease;
+        }
+        .bet-btn.active {
+            background: linear-gradient(180deg, #ffe57f 0%, #b8860b 100%);
+            color: #000;
+            border-color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 0 12px #ffd700;
+        }
+
+        .spin-btn {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 2px solid #fff5cc;
+            color: #030805;
+            padding: 14px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+            text-transform: uppercase;
+            transition: all 0.15s ease;
+        }
+        .spin-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-2px); }
+        .spin-btn:active { transform: translateY(2px); }
+        .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.8); }
+
+        .paytable {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.68rem;
+            color: #ccc;
+        }
+        .paytable span { color: #ffd700; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <canvas id="fx-canvas"></canvas>
+
+    <div class="game-container">
+        <div class="header-panel">
+            <h1>AZ•ART <span class="fruits-highlight">ROYAL FRUITS</span></h1>
+            <button class="btn-action" onclick="resetGame()">СБРОС</button>
+        </div>
+
+        <div class="stats-bar">
+            <div>Баланс: <span id="balance">1000</span>$</div>
+            <div>Общая ставка: <span id="total-bet">30</span>$</div>
+        </div>
+
+        <div class="status-message" id="status-message">Выберите параметры и крутите барабаны!</div>
+
+        <!-- АВТОМАТ -->
+        <div class="slot-machine-body">
+            <div class="reels-window">
+                <div class="win-line line-0" id="line-0"></div>
+                <div class="win-line line-1" id="line-1"></div>
+                <div class="win-line line-2" id="line-2"></div>
+
+                <div class="reel" id="reel-0">
+                    <div class="symbol">🍋</div>
+                    <div class="symbol">🍒</div>
+                    <div class="symbol">⭐</div>
+                </div>
+                <div class="reel" id="reel-1">
+                    <div class="symbol">🍊</div>
+                    <div class="symbol">🔔</div>
+                    <div class="symbol">🍉</div>
+                </div>
+                <div class="reel" id="reel-2">
+                    <div class="symbol">💎</div>
+                    <div class="symbol">⭐</div>
+                    <div class="symbol">🍒</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- НАСТРОЙКИ ЛИНИЙ И СТАВОК -->
+        <div class="controls-panel">
+            <div class="settings-row">
+                <span>Линий выигрыша:</span>
+                <div class="lines-selector">
+                    <button class="line-btn" id="l-1" onclick="setLines(1)">1</button>
+                    <button class="line-btn" id="l-2" onclick="setLines(2)">2</button>
+                    <button class="line-btn active" id="l-3" onclick="setLines(3)">3</button>
+                </div>
+            </div>
+
+            <div class="bets-row">
+                <button class="bet-btn" onclick="setCoin(5)">5$</button>
+                <button class="bet-btn active" onclick="setCoin(10)">10$</button>
+                <button class="bet-btn" onclick="setCoin(25)">25$</button>
+                <button class="bet-btn" onclick="setCoin(50)">50$</button>
+            </div>
+
+            <button class="spin-btn" id="spin-btn" onclick="spinReels()">ВРАЩАТЬ</button>
+        </div>
+
+        <div class="paytable" style="margin-top: 10px;">
+            <div>💎💎💎 <span>x50</span></div>
+            <div>⭐⭐⭐ <span>x20</span></div>
+            <div>🔔🔔🔔 <span>x10</span></div>
+            <div>🍒🍋🍊 <span>x5</span></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function launchConfetti() {
+            for (let i = 0; i < 70; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 0.5) * 14 - 4,
+                    color: ['#ffd700', '#00e676', '#ffffff', '#e91e63'][Math.floor(Math.random() * 4)],
+                    size: Math.random() * 6 + 3,
+                    alpha: 1
+                });
+            }
+        }
+
+        function updateFx() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.018;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+            requestAnimationFrame(updateFx);
+        }
+        updateFx();
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'spin') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(450, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            } else if (type === 'stop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.09);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        const winOsc = audioCtx.createOscillator();
+                        const winGain = audioCtx.createGain();
+                        winOsc.type = 'sine';
+                        winOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        winGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                        winGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
+                        winOsc.connect(winGain);
+                        winGain.connect(audioCtx.destination);
+                        winOsc.start();
+                        winOsc.stop(audioCtx.currentTime + 0.28);
+                    }, idx * 95);
+                });
+                return;
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.09);
+        }
+
+        const symbols = ['🍒', '🍋', '🍊', '🍉', '🔔', '⭐', '💎'];
+        const payouts = {
+            '💎': 50,
+            '⭐': 20,
+            '🔔': 10,
+            '🍉': 5,
+            '🍊': 5,
+            '🍋': 5,
+            '🍒': 3
+        };
+
+        let balance = 1000;
+        let coinSize = 10;
+        let activeLines = 3;
+        let isSpinning = false;
+        let highlightTimer = null;
+
+        function setCoin(size) {
+            if (isSpinning) return;
+            coinSize = size;
+            document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            updateTotalBet();
+        }
+
+        function setLines(lines) {
+            if (isSpinning) return;
+            activeLines = lines;
+            document.querySelectorAll('.line-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`l-${lines}`).classList.add('active');
+            updateTotalBet();
+            triggerTempLineHighlight();
+        }
+
+        function triggerTempLineHighlight() {
+            clearTimeout(highlightTimer);
+            
+            for (let i = 0; i < 3; i++) {
+                let lineEl = document.getElementById(`line-${i}`);
+                lineEl.classList.remove('temp-highlight', 'active-win');
+            }
+
+            let linesToShow = [];
+            if (activeLines >= 1) linesToShow.push(1);
+            if (activeLines >= 2) linesToShow.push(0);
+            if (activeLines >= 3) linesToShow.push(2);
+
+            linesToShow.forEach(rowIdx => {
+                document.getElementById(`line-${rowIdx}`).classList.add('temp-highlight');
+            });
+
+            highlightTimer = setTimeout(() => {
+                for (let i = 0; i < 3; i++) {
+                    document.getElementById(`line-${i}`).classList.remove('temp-highlight');
+                }
+            }, 1000);
+        }
+
+        function updateTotalBet() {
+            let total = coinSize * activeLines;
+            document.getElementById('total-bet').textContent = total;
+        }
+
+        function updateUI() {
+            document.getElementById('balance').textContent = balance;
+        }
+
+        function clearWinHighlights() {
+            clearTimeout(highlightTimer);
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`line-${i}`).classList.remove('active-win', 'temp-highlight');
+            }
+            document.querySelectorAll('.symbol').forEach(s => s.classList.remove('winning'));
+        }
+
+        function resetGame() {
+            if (isSpinning) return;
+            balance = 1000;
+            coinSize = 10;
+            activeLines = 3;
+            setLines(3);
+            clearWinHighlights();
+            updateUI();
+            updateTotalBet();
+            document.getElementById('status-message').textContent = 'Выберите параметры и крутите барабаны!';
+        }
+
+        function spinReels() {
+            if (isSpinning) return;
+            let totalBet = coinSize * activeLines;
+
+            if (balance < totalBet) {
+                document.getElementById('status-message').textContent = 'Недостаточно средств для ставки!';
+                return;
+            }
+
+            clearWinHighlights();
+            balance -= totalBet;
+            updateUI();
+            isSpinning = true;
+            document.getElementById('spin-btn').disabled = true;
+            document.getElementById('status-message').textContent = 'Барабаны вращаются...';
+
+            let matrix = [
+                [symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)]],
+                [symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)]],
+                [symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)]]
+            ];
+
+            let counter = 0;
+            let interval = setInterval(() => {
+                for(let r=0; r<3; r++) {
+                    let reelEl = document.getElementById(`reel-${r}`);
+                    reelEl.children[0].textContent = symbols[Math.floor(Math.random()*symbols.length)];
+                    reelEl.children[1].textContent = symbols[Math.floor(Math.random()*symbols.length)];
+                    reelEl.children[2].textContent = symbols[Math.floor(Math.random()*symbols.length)];
+                }
+                playSound('spin');
+                counter++;
+
+                if (counter > 16) {
+                    clearInterval(interval);
+                    
+                    setTimeout(() => {
+                        let r0 = document.getElementById('reel-0');
+                        r0.children[0].textContent = matrix[0][0];
+                        r0.children[1].textContent = matrix[0][1];
+                        r0.children[2].textContent = matrix[0][2];
+                        playSound('stop');
+                    }, 150);
+
+                    setTimeout(() => {
+                        let r1 = document.getElementById('reel-1');
+                        r1.children[0].textContent = matrix[1][0];
+                        r1.children[1].textContent = matrix[1][1];
+                        r1.children[2].textContent = matrix[1][2];
+                        playSound('stop');
+                    }, 350);
+
+                    setTimeout(() => {
+                        let r2 = document.getElementById('reel-2');
+                        r2.children[0].textContent = matrix[2][0];
+                        r2.children[1].textContent = matrix[2][1];
+                        r2.children[2].textContent = matrix[2][2];
+                        playSound('stop');
+                        evaluateWin(matrix);
+                    }, 550);
+                }
+            }, 75);
+        }
+
+        function evaluateWin(matrix) {
+            isSpinning = false;
+            document.getElementById('spin-btn').disabled = false;
+
+            let totalWin = 0;
+            let winningLinesCount = 0;
+
+            let linesToCheck = [];
+            if (activeLines >= 1) linesToCheck.push(1);
+            if (activeLines >= 2) linesToCheck.push(0);
+            if (activeLines >= 3) linesToCheck.push(2);
+
+            linesToCheck.forEach(rowIdx => {
+                let s1 = matrix[0][rowIdx];
+                let s2 = matrix[1][rowIdx];
+                let s3 = matrix[2][rowIdx];
+
+                if (s1 === s2 && s2 === s3) {
+                    let mult = payouts[s1] || 10;
+                    totalWin += coinSize * mult;
+                    winningLinesCount++;
+
+                    document.getElementById(`line-${rowIdx}`).classList.add('active-win');
+
+                    for (let r = 0; r < 3; r++) {
+                        document.getElementById(`reel-${r}`).children[rowIdx].classList.add('winning');
+                    }
+                }
+            });
+
+            if (totalWin > 0) {
+                balance += totalWin;
+                updateUI();
+                document.getElementById('status-message').textContent = `🎉 ПОБЕДА! Линий: ${winningLinesCount} | Выигрыш: +${totalWin}$!`;
+                playSound('win');
+                launchConfetti();
+            } else {
+                document.getElementById('status-message').textContent = '❌ Увы, в этот раз без совпадений.';
+            }
+        }
+
+        triggerTempLineHighlight();
+    </script>
+</body>
+</html>
