@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ•ART LUXURY THIMBLES</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', 'Segoe UI', serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: radial-gradient(circle, #0f2b22 0%, #030805 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: radial-gradient(ellipse at center, rgba(12, 60, 43, 0.98) 0%, rgba(2, 15, 10, 0.99) 100%);
+            border: 3px solid #d4af37;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.9), inset 0 0 35px rgba(212, 175, 55, 0.2);
+            max-width: 440px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+            padding-bottom: 8px;
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 1.25rem;
+            letter-spacing: 3px;
+            font-family: 'Georgia', serif;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #2b1212 0%, #6e1c1c 100%);
+            border: 1px solid #ff9999;
+            color: #fff;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+        }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .stats-panel span {
+            color: #ffd700;
+            font-size: 0.95rem;
+        }
+
+        .settings-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            margin-bottom: 12px;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(212, 175, 55, 0.25);
+        }
+
+        .settings-title {
+            font-size: 0.75rem;
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: linear-gradient(180deg, #123d2e 0%, #081d16 100%);
+            border: 1.5px solid #d4af37;
+            color: #ccc;
+            padding: 8px 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.78rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn span.coef {
+            color: #ffd700;
+            font-size: 0.7rem;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+            color: #030805;
+            border-color: #fff;
+            box-shadow: 0 0 12px rgba(255,215,0,0.5);
+        }
+
+        .mode-btn.active span.coef {
+            color: #000;
+            font-weight: 900;
+        }
+
+        .status-message {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #00e676;
+            min-height: 24px;
+            margin-bottom: 10px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+        }
+
+        /* УВЕЛИЧЕННАЯ ВЫСОТА ПОЛЯ ДЛЯ ПРЕДОТВРАЩЕНИЯ ОБРЕЗАНИЯ КРАЕВ */
+        .table-area {
+            width: 100%;
+            height: 220px;
+            background: radial-gradient(circle, #144e3d 0%, #061c13 100%);
+            border: 3px solid #8a671c;
+            border-radius: 14px;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.85);
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+
+        .thimble-wrapper {
+            position: absolute;
+            bottom: 15px;
+            width: 90px;
+            height: 140px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            will-change: left, transform; /* Аппаратное ускорение */
+            transition: left 0.16s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* ПОЛНОСТЬЮ РЕАЛИСТИЧНЫЙ ЮВЕЛИРНЫЙ НАПЁРСТОК */
+        .thimble {
+            width: 74px;
+            height: 82px;
+            position: absolute;
+            bottom: 0;
+            z-index: 5;
+            will-change: transform;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            filter: drop-shadow(0 10px 12px rgba(0,0,0,0.85));
+        }
+
+        .thimble-dome {
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, 
+                    #2e1f08 0%, 
+                    #8a671c 18%, 
+                    #ffd700 42%, 
+                    #fff8d6 50%, 
+                    #ffd700 58%, 
+                    #8a671c 82%, 
+                    #1f1404 100%);
+            clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+            border-radius: 12px 12px 2px 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thimble-cap {
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 52px;
+            height: 12px;
+            background: linear-gradient(180deg, #fff8d6 0%, #ffd700 50%, #8a671c 100%);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 6;
+        }
+
+        .thimble-texture {
+            position: absolute;
+            top: 14px;
+            left: 5%;
+            width: 90%;
+            height: 52px;
+            background-image: 
+                radial-gradient(rgba(0, 0, 0, 0.45) 1.2px, transparent 1.2px),
+                radial-gradient(rgba(255, 255, 255, 0.25) 1.2px, transparent 1.2px);
+            background-size: 7px 7px;
+            background-position: 0 0, 3.5px 3.5px;
+            opacity: 0.85;
+        }
+
+        .thimble-rim {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(180deg, #ffe57f 0%, #8a671c 50%, #3a2705 100%);
+            border-top: 1px solid rgba(255,255,255,0.6);
+            border-bottom: 1px solid #1f1404;
+        }
+
+        /* МЯГКИЙ ПОДЪЕМ НАПЁРСТКА БЕЗ ОБРЕЗАНИЯ ВЕРХНЕГО КРАЯ */
+        .thimble-wrapper.lifted .thimble {
+            transform: translate3d(0, -60px, 0);
+        }
+
+        .ball {
+            position: absolute;
+            bottom: 8px;
+            width: 22px;
+            height: 22px;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #ffd700 50%, #8a671c 100%);
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.9), inset -2px -2px 4px rgba(0,0,0,0.4);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .ball.visible { opacity: 1; }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .bet-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .chip-btn {
+            background: linear-gradient(180deg, #2b1f0d 0%, #120d05 100%);
+            border: 2px solid #d4af37;
+            color: #ffd700;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 10px 0;
+            font-size: 0.85rem;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            transition: all 0.15s ease;
+        }
+
+        .chip-btn.active {
+            background: linear-gradient(180deg, #ffe57f 0%, #b8860b 100%);
+            color: #000;
+            border-color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 0 12px #ffd700;
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 2px solid #fff5cc;
+            color: #030805;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+            transition: all 0.2s;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="header-panel">
+            <h1>AZ•ART THIMBLES</h1>
+            <button class="btn-reset" onclick="resetGame()">СБРОС</button>
+        </div>
+
+        <div class="stats-panel">
+            <div>Баланс: <span id="balance">1000</span>$</div>
+            <div>Ставка: <span id="current-bet">50</span>$</div>
+        </div>
+
+        <div class="settings-bar">
+            <span class="settings-title">Режим игры и коэффициенты:</span>
+            <div class="mode-selector">
+                <button class="mode-btn active" id="mode-1" onclick="setBallsCount(1)">
+                    1 Шарик
+                    <span class="coef">x2.85 Выигрыш</span>
+                </button>
+                <button class="mode-btn" id="mode-2" onclick="setBallsCount(2)">
+                    2 Шарика
+                    <span class="coef">x1.42 Выигрыш</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="status-message" id="status-message">Выберите ставку и нажмите «ИГРАТЬ»</div>
+
+        <div class="table-area" id="table-area">
+            <div class="thimble-wrapper" id="wrap-0" onclick="chooseThimble(0)">
+                <div class="ball" id="ball-0"></div>
+                <div class="thimble">
+                    <div class="thimble-cap"></div>
+                    <div class="thimble-dome">
+                        <div class="thimble-texture"></div>
+                        <div class="thimble-rim"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="thimble-wrapper" id="wrap-1" onclick="chooseThimble(1)">
+                <div class="ball" id="ball-1"></div>
+                <div class="thimble">
+                    <div class="thimble-cap"></div>
+                    <div class="thimble-dome">
+                        <div class="thimble-texture"></div>
+                        <div class="thimble-rim"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="thimble-wrapper" id="wrap-2" onclick="chooseThimble(2)">
+                <div class="ball" id="ball-2"></div>
+                <div class="thimble">
+                    <div class="thimble-cap"></div>
+                    <div class="thimble-dome">
+                        <div class="thimble-texture"></div>
+                        <div class="thimble-rim"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="bet-selector" id="bet-selector">
+                <button class="chip-btn" onclick="setBet(10)">10$</button>
+                <button class="chip-btn active" onclick="setBet(50)">50$</button>
+                <button class="chip-btn" onclick="setBet(100)">100$</button>
+                <button class="chip-btn" onclick="setBet(500)">500$</button>
+            </div>
+            <button class="btn-action" id="action-btn" onclick="startRound()">ИГРАТЬ</button>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'chip') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(250, now + 0.05);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            } else if (type === 'slide') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(140 + Math.random() * 80, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.09);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+            } else if (type === 'lift') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        const winOsc = audioCtx.createOscillator();
+                        const winGain = audioCtx.createGain();
+                        winOsc.type = 'sine';
+                        winOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        winGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        winGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                        winOsc.connect(winGain);
+                        winGain.connect(audioCtx.destination);
+                        winOsc.start();
+                        winOsc.stop(audioCtx.currentTime + 0.25);
+                    }, idx * 90);
+                });
+                return;
+            } else if (type === 'lose') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.exponentialRampToValueAtTime(70, now + 0.22);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.22);
+        }
+
+        let balance = 1000;
+        let currentBet = 50;
+        let ballsCount = 1;
+        let gameState = 'IDLE';
+
+        let positions = [0, 1, 2];
+        let coordsX = [0, 0, 0];
+        let hasBall = [false, false, false];
+
+        function recalculatePositions() {
+            const containerWidth = document.getElementById('table-area').clientWidth;
+            const thimbleWidth = 90;
+            const step = (containerWidth - thimbleWidth) / 2;
+            coordsX = [0, step, containerWidth - thimbleWidth];
+            updateDomPositions(false);
+        }
+
+        window.addEventListener('resize', recalculatePositions);
+
+        window.onload = () => {
+            recalculatePositions();
+        };
+
+        function setBet(amount) {
+            if (gameState !== 'IDLE') return;
+            if (amount > balance) {
+                document.getElementById('status-message').textContent = 'Недостаточно средств!';
+                return;
+            }
+            currentBet = amount;
+            document.getElementById('current-bet').textContent = currentBet;
+            document.querySelectorAll('.chip-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            playSound('chip');
+        }
+
+        function setBallsCount(count) {
+            if (gameState !== 'IDLE') return;
+            ballsCount = count;
+            document.getElementById('mode-1').classList.toggle('active', count === 1);
+            document.getElementById('mode-2').classList.toggle('active', count === 2);
+            playSound('chip');
+        }
+
+        function updateUI() {
+            document.getElementById('balance').textContent = balance;
+        }
+
+        function resetGame() {
+            if (gameState === 'SHUFFLING' || gameState === 'PREVIEW') return;
+            balance = 1000;
+            currentBet = 50;
+            ballsCount = 1;
+            gameState = 'IDLE';
+            updateUI();
+            setBallsCount(1);
+            document.getElementById('current-bet').textContent = currentBet;
+            document.getElementById('status-message').textContent = 'Выберите ставку и нажмите «ИГРАТЬ»';
+            document.getElementById('action-btn').disabled = false;
+            document.getElementById('action-btn').textContent = 'ИГРАТЬ';
+            hideAllBalls();
+            lowerAllThimbles();
+            positions = [0, 1, 2];
+            recalculatePositions();
+        }
+
+        function hideAllBalls() {
+            for(let i=0; i<3; i++) document.getElementById(`ball-${i}`).classList.remove('visible');
+        }
+
+        function lowerAllThimbles() {
+            for(let i=0; i<3; i++) document.getElementById(`wrap-${i}`).classList.remove('lifted');
+        }
+
+        function updateDomPositions(animated) {
+            for(let i=0; i<3; i++) {
+                let el = document.getElementById(`wrap-${i}`);
+                el.style.transition = animated ? 'left 0.16s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
+                el.style.left = `${coordsX[positions[i]]}px`;
+            }
+        }
+
+        function startRound() {
+            if (balance < currentBet) {
+                document.getElementById('status-message').textContent = 'Недостаточно средств!';
+                return;
+            }
+
+            balance -= currentBet;
+            updateUI();
+            gameState = 'PREVIEW';
+            document.getElementById('action-btn').disabled = true;
+            document.getElementById('status-message').textContent = 'Запомните расположение шариков...';
+
+            hideAllBalls();
+            lowerAllThimbles();
+
+            hasBall = [false, false, false];
+            let placed = 0;
+            while(placed < ballsCount) {
+                let r = Math.floor(Math.random() * 3);
+                if (!hasBall[r]) {
+                    hasBall[r] = true;
+                    placed++;
+                }
+            }
+
+            setTimeout(() => {
+                playSound('lift');
+                for(let i=0; i<3; i++) {
+                    if (hasBall[i]) {
+                        document.getElementById(`ball-${i}`).classList.add('visible');
+                        document.getElementById(`wrap-${i}`).classList.add('lifted');
+                    }
+                }
+            }, 200);
+
+            setTimeout(() => {
+                lowerAllThimbles();
+                setTimeout(() => {
+                    hideAllBalls();
+                    gameState = 'SHUFFLING';
+                    document.getElementById('status-message').textContent = 'Перемешивание...';
+                    runShufflingWithAcceleration(14, 300);
+                }, 400);
+            }, 1500);
+        }
+
+        function runShufflingWithAcceleration(stepsLeft, currentDelay) {
+            if (stepsLeft <= 0) {
+                gameState = 'CHOOSING';
+                document.getElementById('status-message').textContent = 'Где шарик? Выберите напёрсток!';
+                return;
+            }
+
+            let idx1 = Math.floor(Math.random() * 3);
+            let idx2;
+            do {
+                idx2 = Math.floor(Math.random() * 3);
+            } while (idx2 === idx1);
+
+            let temp = positions[idx1];
+            positions[idx1] = positions[idx2];
+            positions[idx2] = temp;
+
+            updateDomPositions(true);
+            playSound('slide');
+
+            let nextDelay = Math.max(100, currentDelay - 15);
+
+            setTimeout(() => {
+                runShufflingWithAcceleration(stepsLeft - 1, nextDelay);
+            }, currentDelay);
+        }
+
+        function chooseThimble(wrapperIndex) {
+            if (gameState !== 'CHOOSING') return;
+            gameState = 'REVEALED';
+
+            let chosenWrapper = document.getElementById(`wrap-${wrapperIndex}`);
+            let logicalPos = positions[wrapperIndex];
+
+            playSound('lift');
+            chosenWrapper.classList.add('lifted');
+
+            if (hasBall[logicalPos]) {
+                document.getElementById(`ball-${wrapperIndex}`).classList.add('visible');
+            }
+
+            let isWin = hasBall[logicalPos];
+
+            if (isWin) {
+                let multiplier = ballsCount === 1 ? 2.85 : 1.42;
+                let winAmount = Math.round(currentBet * multiplier);
+                balance += winAmount;
+                document.getElementById('status-message').textContent = `🎉 ПОБЕДА! ВЫИГРЫШ +${winAmount}$!`;
+                playSound('win');
+            } else {
+                for(let i=0; i<3; i++) {
+                    if (hasBall[positions[i]]) {
+                        document.getElementById(`ball-${i}`).classList.add('visible');
+                        document.getElementById(`wrap-${i}`).classList.add('lifted');
+                    }
+                }
+                document.getElementById('status-message').textContent = '❌ Увы, под этим напёрстком пусто!';
+                playSound('lose');
+            }
+
+            updateUI();
+            document.getElementById('action-btn').disabled = false;
+            document.getElementById('action-btn').textContent = 'СЫГРАТЬ СНОВА';
+            gameState = 'IDLE';
+        }
+
+        setTimeout(recalculatePositions, 50);
+    </script>
+</body>
+</html>

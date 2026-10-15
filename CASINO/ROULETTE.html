@@ -1,1 +1,884 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ•ART LUXURY ROULETTE</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
 
+        body {
+            background: radial-gradient(circle, #0f2b22 0%, #030805 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .game-container {
+            background: rgba(5, 17, 13, 0.96);
+            border: 2px solid #d4af37;
+            border-radius: 18px;
+            padding: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.9), inset 0 0 30px rgba(212, 175, 55, 0.15);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            max-width: 480px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #ffd700;
+            margin-bottom: 2px;
+            font-size: 1.15rem;
+            letter-spacing: 4px;
+            font-family: 'Georgia', serif;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        }
+
+        /* ИСТОРИЯ ВЫПАВШИХ ЧИСЕЛ */
+        .history-bar {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            justify-content: flex-start;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 5px 8px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            width: 100%;
+            overflow-x: auto;
+            max-height: 36px;
+        }
+
+        .history-label {
+            font-size: 0.6rem;
+            color: #aaa;
+            margin-right: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+
+        .history-ball {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #fff;
+            flex-shrink: 0;
+            border: 1px solid #ffd700;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.7);
+        }
+        .hist-red { background: #b71c1c; }
+        .hist-black { background: #111111; }
+        .hist-zero { background: #1b5e20; }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 5px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+            font-weight: bold;
+        }
+
+        .stats-panel span {
+            color: #ffd700;
+        }
+
+        /* ИДЕАЛЬНО КРУПНОЕ И ЦЕНТРИРОВАННОЕ КОЛЕСО */
+        .wheel-box {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 4px auto 8px auto;
+            border-radius: 50%;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.9), inset 0 0 15px rgba(0,0,0,0.9);
+            border: 5px solid #d4af37;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            display: block;
+            border-radius: 50%;
+            margin: auto;
+        }
+
+        .status-message {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #00e676;
+            min-height: 18px;
+            margin-bottom: 6px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .roulette-table {
+            background: radial-gradient(ellipse at center, rgba(12, 60, 43, 0.98) 0%, rgba(2, 15, 10, 0.99) 100%);
+            border: 4px solid #8a671c;
+            border-radius: 10px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 6px 20px rgba(0,0,0,0.5);
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        .grid-numbers {
+            display: grid;
+            grid-template-columns: 28px repeat(12, 1fr);
+            gap: 2px;
+            justify-content: center;
+        }
+
+        .cell {
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.25);
+            user-select: none;
+            position: relative;
+            transition: transform 0.1s, background-color 0.3s;
+        }
+
+        .cell:hover {
+            transform: scale(1.06);
+            border-color: #ffd700;
+            z-index: 5;
+        }
+
+        .cell-zero {
+            grid-row: span 3;
+            background: #1b5e20;
+            color: #fff;
+            height: auto;
+        }
+
+        .cell-red { background: #b71c1c; color: #fff; }
+        .cell-black { background: #111111; color: #fff; }
+
+        .cell.win-highlight {
+            background: #ffd700 !important;
+            color: #000 !important;
+            box-shadow: 0 0 12px #ffd700;
+            border-color: #fff;
+            z-index: 5;
+        }
+
+        .cell.lose-highlight {
+            opacity: 0.35;
+        }
+
+        @keyframes chipWinBounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -65%) scale(1.25); }
+        }
+
+        .chip-on-cell {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            background: radial-gradient(circle, #ffe57f 0%, #d4af37 70%, #8a671c 100%);
+            border: 1.5px solid #fff;
+            border-radius: 50%;
+            font-size: 0.48rem;
+            color: #111;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .chip-on-cell.win-chip {
+            animation: chipWinBounce 0.6s ease infinite;
+            border-color: #00e676;
+            box-shadow: 0 0 10px #00e676;
+        }
+
+        @keyframes floatText {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
+            100% { opacity: 0; transform: translate(-50%, -35px) scale(1.2); }
+        }
+
+        .win-popup-text {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00e676;
+            color: #030805;
+            font-weight: 900;
+            font-size: 0.6rem;
+            padding: 1px 4px;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 30;
+            animation: floatText 1.2s ease-out forwards;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+            white-space: nowrap;
+        }
+
+        .grid-dozens {
+            display: grid;
+            grid-template-columns: 28px repeat(3, 1fr);
+            gap: 2px;
+            justify-content: center;
+        }
+
+        .grid-outside {
+            display: grid;
+            grid-template-columns: 28px repeat(6, 1fr);
+            gap: 2px;
+            justify-content: center;
+        }
+
+        .outside-btn {
+            background: rgba(0, 0, 0, 0.4);
+            color: #ffd700;
+            font-size: 0.58rem;
+            height: 24px;
+            position: relative;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 3px;
+        }
+
+        .outside-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #fff;
+        }
+
+        .info-panel {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 5px 8px;
+            margin-bottom: 6px;
+            font-size: 0.65rem;
+            text-align: left;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .odds-hint {
+            display: flex;
+            justify-content: space-between;
+            color: #bbb;
+            font-size: 0.58rem;
+            margin-bottom: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 2px;
+        }
+
+        .win-report {
+            color: #00e676;
+            font-weight: bold;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .chip-picker {
+            background: radial-gradient(circle, #ffe57f 0%, #d4af37 70%, #8a671c 100%);
+            border: 2px dashed #fff;
+            color: #111;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 0.68rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+        }
+
+        .chip-picker.active {
+            transform: scale(1.15);
+            border-color: #00e676;
+            box-shadow: 0 0 10px #00e676;
+        }
+
+        .btn-action {
+            background: linear-gradient(to bottom, #d4af37, #8a671c);
+            border: 1px solid #fff5cc;
+            color: #0d2118;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .btn-action:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-clear {
+            background: linear-gradient(to bottom, #d32f2f, #5f0909);
+            border-color: #ff8a80;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>AZ•ART ROULETTE</h1>
+
+        <!-- ИСТОРИЯ ВЫПАВШИХ ЧИСЕЛ -->
+        <div class="history-bar" id="history-container">
+            <span class="history-label">История:</span>
+            <span style="color:#777; font-size:0.65rem;">пусто</span>
+        </div>
+
+        <div class="stats-panel">
+            <div>Баланс: <span id="player-chips">1000</span>$</div>
+            <div>Ставка: <span id="total-bet-display">0</span>$</div>
+        </div>
+
+        <!-- КРУПНОЕ ЦЕНТРИРОВАННОЕ КОЛЕСО -->
+        <div class="wheel-box">
+            <canvas id="rouletteCanvas" width="240" height="240"></canvas>
+        </div>
+
+        <div id="status-message" class="status-message">Сделайте ставку на поле</div>
+
+        <div class="roulette-table">
+            <div class="grid-numbers" id="numbers-grid">
+                <div class="cell cell-zero" id="cell-num_0" onclick="placeBet('num', 0)">0</div>
+            </div>
+
+            <div class="grid-dozens" id="dozens-grid">
+                <div></div>
+                <div class="cell outside-btn" id="cell-dozen_1" onclick="placeBet('dozen', 1)">1st 12</div>
+                <div class="cell outside-btn" id="cell-dozen_2" onclick="placeBet('dozen', 2)">2nd 12</div>
+                <div class="cell outside-btn" id="cell-dozen_3" onclick="placeBet('dozen', 3)">3rd 12</div>
+            </div>
+
+            <div class="grid-outside">
+                <div></div>
+                <div class="cell outside-btn" id="cell-half_1-18" onclick="placeBet('half', '1-18')">1-18</div>
+                <div class="cell outside-btn" id="cell-parity_even" onclick="placeBet('parity', 'even')">ЧЕТ</div>
+                <div class="cell outside-btn" id="cell-color_red" onclick="placeBet('color', 'red')" style="background:#b71c1c; color:#fff;">🟥</div>
+                <div class="cell outside-btn" id="cell-color_black" onclick="placeBet('color', 'black')" style="background:#111; color:#fff;">⬛</div>
+                <div class="cell outside-btn" id="cell-parity_odd" onclick="placeBet('parity', 'odd')">НЕЧЕТ</div>
+                <div class="cell outside-btn" id="cell-half_19-36" onclick="placeBet('half', '19-36')">19-36</div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="odds-hint">
+                <span>Число (35:1)</span>
+                <span>Дюжина (2:1)</span>
+                <span>Шансы (1:1)</span>
+            </div>
+            <div id="win-report-text" style="color: #ccc;">Сделайте ставку для начала игры.</div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="chip-picker active" onclick="selectChip(10)">10</div>
+            <div class="chip-picker" onclick="selectChip(50)">50</div>
+            <div class="chip-picker" onclick="selectChip(100)">100</div>
+            <div class="chip-picker" onclick="selectChip(500)">500</div>
+            <button class="btn-action btn-clear" onclick="clearBets()">Очистить</button>
+            <button class="btn-action" id="spin-btn" onclick="spinWheel()">Крутить!</button>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            if (type === 'chip') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.04);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.04);
+            } else if (type === 'ball_tick') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(2200 + Math.random() * 300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.02);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.02);
+            } else if (type === 'ball_drop') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.25);
+                    }, idx * 90);
+                });
+            }
+        }
+
+        const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+        const WHEEL_NUMBERS = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+
+        let playerChips = 1000;
+        let selectedChipValue = 10;
+        let bets = {};
+        let totalBet = 0;
+        let isSpinning = false;
+        let historyList = [];
+
+        let wheelAngle = 0;
+        let ballAngle = 0;
+        let ballRadius = 102;
+
+        const canvas = document.getElementById('rouletteCanvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        function initTable() {
+            const grid = document.getElementById('numbers-grid');
+            for (let row = 2; row >= 0; row--) {
+                for (let col = 1; col <= 12; col++) {
+                    let num = col * 3 - row;
+                    let isRed = RED_NUMBERS.includes(num);
+                    let cell = document.createElement('div');
+                    cell.className = `cell ${isRed ? 'cell-red' : 'cell-black'}`;
+                    cell.id = `cell-num_${num}`;
+                    cell.textContent = num;
+                    cell.onclick = () => placeBet('num', num);
+                    grid.appendChild(cell);
+                }
+            }
+            drawWheel();
+        }
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Внешнее золотое кольцо
+            let gradOuter = ctx.createRadialGradient(centerX, centerY, 98, centerX, centerY, 118);
+            gradOuter.addColorStop(0, '#ffe57f');
+            gradOuter.addColorStop(0.5, '#b8860b');
+            gradOuter.addColorStop(1, '#3a2705');
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 116, 0, Math.PI * 2);
+            ctx.fillStyle = gradOuter;
+            ctx.fill();
+
+            // Трасса шарика
+            let gradTrack = ctx.createRadialGradient(centerX, centerY, 84, centerX, centerY, 98);
+            gradTrack.addColorStop(0, '#444');
+            gradTrack.addColorStop(0.5, '#111');
+            gradTrack.addColorStop(1, '#777');
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 98, 0, Math.PI * 2);
+            ctx.fillStyle = gradTrack;
+            ctx.fill();
+
+            const numSectors = WHEEL_NUMBERS.length;
+            const sectorAngle = (Math.PI * 2) / numSectors;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(wheelAngle);
+
+            // Секторы колеса
+            for (let i = 0; i < numSectors; i++) {
+                let startA = i * sectorAngle;
+                let endA = startA + sectorAngle;
+                let num = WHEEL_NUMBERS[i];
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, 84, startA, endA);
+                ctx.closePath();
+
+                if (num === 0) ctx.fillStyle = '#1b5e20';
+                else if (RED_NUMBERS.includes(num)) ctx.fillStyle = '#b71c1c';
+                else ctx.fillStyle = '#111111';
+
+                ctx.fill();
+                ctx.lineWidth = 0.8;
+                ctx.strokeStyle = '#d4af37';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.rotate(startA + sectorAngle / 2);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 8.5px Segoe UI, sans-serif';
+                ctx.fillText(num, 69, 0);
+                ctx.restore();
+            }
+
+            // Центральный хаб с логотипом
+            let gradCenter = ctx.createRadialGradient(0, 0, 2, 0, 0, 38);
+            gradCenter.addColorStop(0, '#124a3a');
+            gradCenter.addColorStop(1, '#030907');
+            ctx.beginPath();
+            ctx.arc(0, 0, 38, 0, Math.PI * 2);
+            ctx.fillStyle = gradCenter;
+            ctx.fill();
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 9.5px Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('AZ•ART', 0, -2);
+            ctx.font = '4.5px sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('2026', 0, 9);
+
+            ctx.restore();
+
+            // Отрисовка шарика
+            let ballX = centerX + Math.cos(ballAngle) * ballRadius;
+            let ballY = centerY + Math.sin(ballAngle) * ballRadius;
+
+            ctx.beginPath();
+            ctx.arc(ballX + 1.5, ballY + 1.5, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fill();
+
+            let ballGrad = ctx.createRadialGradient(ballX - 1, ballY - 1, 0.5, ballX, ballY, 4.5);
+            ballGrad.addColorStop(0, '#ffffff');
+            ballGrad.addColorStop(0.7, '#d0d0d0');
+            ballGrad.addColorStop(1, '#444444');
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = ballGrad;
+            ctx.fill();
+        }
+
+        function selectChip(val) {
+            selectedChipValue = val;
+            document.querySelectorAll('.chip-picker').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function updateUI() {
+            document.getElementById('player-chips').textContent = playerChips;
+            document.getElementById('total-bet-display').textContent = totalBet;
+
+            document.querySelectorAll('.chip-on-cell').forEach(el => el.remove());
+
+            for (let key in bets) {
+                let amount = bets[key];
+                let targetEl = document.getElementById(`cell-${key}`);
+
+                if (targetEl && amount > 0) {
+                    let chip = document.createElement('div');
+                    chip.className = 'chip-on-cell';
+                    chip.textContent = amount >= 1000 ? Math.round(amount/1000)+'k' : amount;
+                    targetEl.appendChild(chip);
+                }
+            }
+        }
+
+        function placeBet(type, target) {
+            if (isSpinning) return;
+            let key = `${type}_${target}`;
+            
+            if (playerChips < selectedChipValue) {
+                document.getElementById('status-message').textContent = 'Недостаточно фишек!';
+                return;
+            }
+
+            playerChips -= selectedChipValue;
+            totalBet += selectedChipValue;
+            bets[key] = (bets[key] || 0) + selectedChipValue;
+
+            playSound('chip');
+            document.getElementById('status-message').textContent = `Ставка принята: ${totalBet}$`;
+            updateUI();
+        }
+
+        function clearBets() {
+            if (isSpinning) return;
+            playerChips += totalBet;
+            bets = {};
+            totalBet = 0;
+            clearHighlights();
+            updateUI();
+            document.getElementById('status-message').textContent = 'Ставки сброшены';
+            document.getElementById('win-report-text').textContent = 'Сделайте ставку для начала игры.';
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.cell').forEach(c => {
+                c.classList.remove('win-highlight', 'lose-highlight');
+            });
+            document.querySelectorAll('.win-popup-text').forEach(e => e.remove());
+        }
+
+        function spinWheel() {
+            if (totalBet === 0 || isSpinning) {
+                document.getElementById('status-message').textContent = 'Сделайте хотя бы одну ставку!';
+                return;
+            }
+
+            clearHighlights();
+            isSpinning = true;
+            document.getElementById('status-message').textContent = 'Шарик запущен...';
+            document.getElementById('win-report-text').textContent = 'Вращение...';
+
+            let winningIndex = Math.floor(Math.random() * WHEEL_NUMBERS.length);
+            let winningNum = WHEEL_NUMBERS[winningIndex];
+
+            let sectorAngle = (Math.PI * 2) / WHEEL_NUMBERS.length;
+            let targetWheelAngle = Math.PI * 2 * 6 + (Math.PI * 2 - (winningIndex * sectorAngle + sectorAngle / 2));
+            let targetBallAngle = -Math.PI / 2;
+
+            let startTime = null;
+            let duration = 4800;
+            let lastTickAngle = 0;
+
+            function animate(currentTime) {
+                if (!startTime) startTime = currentTime;
+                let progress = (currentTime - startTime) / duration;
+
+                if (progress < 1) {
+                    let easeProgress = 1 - Math.pow(1 - progress, 3);
+
+                    wheelAngle = targetWheelAngle * easeProgress;
+                    ballAngle = (targetBallAngle - Math.PI * 8 * (1 - easeProgress)) * easeProgress;
+
+                    if (progress < 0.65) {
+                        ballRadius = 102;
+                    } else {
+                        let dropProgress = (progress - 0.65) / 0.35;
+                        ballRadius = 102 - (102 - 68) * dropProgress;
+                    }
+
+                    if (Math.abs(ballAngle - lastTickAngle) > sectorAngle * 0.7) {
+                        playSound('ball_tick');
+                        lastTickAngle = ballAngle;
+                    }
+
+                    drawWheel();
+                    requestAnimationFrame(animate);
+                } else {
+                    wheelAngle = targetWheelAngle % (Math.PI * 2);
+                    ballRadius = 68;
+                    ballAngle = -wheelAngle - (winningIndex * sectorAngle + sectorAngle / 2);
+
+                    drawWheel();
+                    playSound('ball_drop');
+
+                    setTimeout(() => {
+                        isSpinning = false;
+                        
+                        historyList.unshift(winningNum);
+                        if (historyList.length > 12) historyList.pop();
+                        updateHistoryUI();
+
+                        let res = calculateWinningsAndHighlight(winningNum);
+                        const msg = document.getElementById('status-message');
+
+                        if (res.totalWin > 0) {
+                            playerChips += res.totalWin + res.totalOriginalWonBets;
+                            msg.textContent = `Выпало ${winningNum}! Вы выиграли ${res.totalWin}$ 🎉`;
+                            document.getElementById('win-report-text').innerHTML = `<span class="win-report">Выигрыши: ${res.report.join(' | ')}</span>`;
+                            playSound('win');
+                        } else {
+                            msg.textContent = `Выпало ${winningNum}. Ставки проиграли.`;
+                            document.getElementById('win-report-text').textContent = `Выпало число ${winningNum}. Ни одна ставка не сыграла.`;
+                        }
+
+                        bets = {};
+                        totalBet = 0;
+                        updateUI();
+                    }, 250);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function updateHistoryUI() {
+            let container = document.getElementById('history-container');
+            container.innerHTML = '<span class="history-label">История:</span>';
+            historyList.forEach(num => {
+                let ball = document.createElement('div');
+                ball.className = 'history-ball';
+                ball.textContent = num;
+                if (num === 0) ball.classList.add('hist-zero');
+                else if (RED_NUMBERS.includes(num)) ball.classList.add('hist-red');
+                else ball.classList.add('hist-black');
+                container.appendChild(ball);
+            });
+        }
+
+        function calculateWinningsAndHighlight(num) {
+            let totalWin = 0;
+            let totalOriginalWonBets = 0;
+            let report = [];
+            let isRed = RED_NUMBERS.includes(num);
+
+            for (let key in bets) {
+                let amount = bets[key];
+                let parts = key.split('_');
+                let type = parts[0];
+                let target = parts[1];
+                let profit = 0;
+                let isBetWon = false;
+
+                if (type === 'num' && Number(target) === num) {
+                    profit = amount * 35;
+                    totalWin += profit;
+                    totalOriginalWonBets += amount;
+                    isBetWon = true;
+                    report.push(`Число ${num} (+${profit}$)`);
+                } else if (type === 'dozen') {
+                    let d = Number(target);
+                    if ((d === 1 && num >= 1 && num <= 12) ||
+                        (d === 2 && num >= 13 && num <= 24) ||
+                        (d === 3 && num >= 25 && num <= 36)) {
+                        profit = amount * 2;
+                        totalWin += profit;
+                        totalOriginalWonBets += amount;
+                        isBetWon = true;
+                        report.push(`${d} Дюжина (+${profit}$)`);
+                    }
+                } else if (type === 'half') {
+                    if ((target === '1-18' && num >= 1 && num <= 18) ||
+                        (target === '19-36' && num >= 19 && num <= 36)) {
+                        profit = amount * 1;
+                        totalWin += profit;
+                        totalOriginalWonBets += amount;
+                        isBetWon = true;
+                        report.push(`Половина ${target} (+${profit}$)`);
+                    }
+                } else if (type === 'parity') {
+                    if (num !== 0) {
+                        if ((target === 'even' && num % 2 === 0) ||
+                            (target === 'odd' && num % 2 !== 0)) {
+                            profit = amount * 1;
+                            totalWin += profit;
+                            totalOriginalWonBets += amount;
+                            isBetWon = true;
+                            report.push(`${target === 'even' ? 'Чет' : 'Нечет'} (+${profit}$)`);
+                        }
+                    }
+                } else if (type === 'color') {
+                    if ((target === 'red' && isRed) ||
+                        (target === 'black' && !isRed && num !== 0)) {
+                        profit = amount * 1;
+                        totalWin += profit;
+                        totalOriginalWonBets += amount;
+                        isBetWon = true;
+                        report.push(`${target === 'red' ? 'Красное' : 'Черное'} (+${profit}$)`);
+                    }
+                }
+
+                let el = document.getElementById(`cell-${key}`);
+                if (el) {
+                    if (isBetWon) {
+                        el.classList.add('win-highlight');
+                        let chipEl = el.querySelector('.chip-on-cell');
+                        if (chipEl) chipEl.classList.add('win-chip');
+
+                        let popup = document.createElement('div');
+                        popup.className = 'win-popup-text';
+                        popup.textContent = `+${profit}$`;
+                        el.appendChild(popup);
+                    } else {
+                        el.classList.add('lose-highlight');
+                    }
+                }
+            }
+
+            let winningNumEl = document.getElementById(`cell-num_${num}`);
+            if (winningNumEl && !winningNumEl.classList.contains('win-highlight')) {
+                winningNumEl.classList.add('win-highlight');
+            }
+
+            return { totalWin, totalOriginalWonBets, report };
+        }
+
+        initTable();
+        updateUI();
+    </script>
+</body>
+</html>

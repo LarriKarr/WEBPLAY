@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ПОКЕР</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle, #2c3e50 0%, #1a252f 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 20px;
+            padding: 12px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.7), inset 0 1px 2px rgba(255,255,255,0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            max-width: 440px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #ffffff;
+            margin-bottom: 2px;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            z-index: 20;
+        }
+
+        .toggle-group {
+            display: flex;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+            flex-wrap: wrap;
+            justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 2px 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+        }
+
+        .toggle-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.4);
+        }
+
+        .poker-table-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+            height: 460px;
+            margin-top: 32px;
+            margin-bottom: 10px;
+        }
+
+        .poker-table {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(34, 139, 34, 0.65) 0%, rgba(12, 60, 12, 0.96) 100%);
+            border: 10px solid rgba(100, 50, 15, 0.95);
+            border-radius: 170px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 35px rgba(0,0,0,0.9), 0 12px 35px rgba(0,0,0,0.6);
+        }
+
+        .seat {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .bot-badge {
+            background: linear-gradient(to bottom, rgba(30, 30, 30, 0.95), rgba(10, 10, 10, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 2px 4px;
+            border-radius: 8px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            min-width: 65px;
+            font-size: 0.55rem;
+            color: #ffd700;
+            font-weight: bold;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            transition: transform 0.2s;
+        }
+
+        .bot-badge.active-turn {
+            border-color: #00e676;
+            color: #00e676;
+            box-shadow: 0 0 14px rgba(0, 230, 118, 0.9);
+            transform: scale(1.05);
+        }
+
+        .bot-badge.winner-badge {
+            border-color: #ffd700;
+            background: linear-gradient(to bottom, rgba(90, 70, 10, 0.95), rgba(40, 25, 0, 0.95));
+            box-shadow: 0 0 20px rgba(255, 215, 0, 1);
+            transform: scale(1.08);
+            animation: pulseWinner 0.8s infinite alternate;
+        }
+
+        @keyframes pulseWinner {
+            0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.7); }
+            100% { box-shadow: 0 0 22px rgba(255, 215, 0, 1); }
+        }
+
+        .bot-badge.folded {
+            opacity: 0.4;
+            text-decoration: line-through;
+        }
+
+        .bot-cards {
+            display: flex;
+            gap: 1px;
+        }
+
+        .center-table {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            z-index: 2;
+            max-width: 78%;
+        }
+
+        .dealer-box {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(10, 10, 10, 0.94);
+            border: 1px solid rgba(255, 215, 0, 0.8);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            color: #00e676;
+            text-align: center;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+            z-index: 100;
+            max-width: 92%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dealer-avatar {
+            font-size: 0.85rem;
+        }
+
+        .community-cards {
+            display: flex;
+            gap: 3px;
+            justify-content: center;
+            min-height: 40px;
+            margin-top: 22px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.5);
+            border: 2px dashed rgba(255, 255, 255, 0.85);
+            user-select: none;
+        }
+
+        .chip-pot {
+            width: 36px;
+            height: 36px;
+            background: radial-gradient(circle, #e53935 0%, #b71c1c 100%);
+            color: #ffffff;
+            font-size: 0.68rem;
+            border-width: 2px;
+        }
+
+        .chip-bet {
+            width: 18px;
+            height: 18px;
+            background: radial-gradient(circle, #ffb300 0%, #ff8f00 100%);
+            color: #111;
+            font-size: 0.5rem;
+            border-width: 1px;
+        }
+
+        .pot-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0,0,0,0.55);
+            padding: 2px 6px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+        }
+
+        .pot-label {
+            font-size: 0.6rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .card {
+            width: 26px;
+            height: 38px;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 4px;
+            border: 1px solid #bbb;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2px;
+            font-weight: bold;
+            font-size: 0.55rem;
+            user-select: none;
+            transition: transform 0.2s;
+        }
+
+        .card.highlighted-winning-card {
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 10px #ffd700, inset 0 0 5px #ffd700;
+            transform: translateY(-4px);
+            background: #fffde7;
+        }
+
+        .card.red { color: #d32f2f; }
+        .card.black { color: #212121; }
+
+        .card.card-back {
+            background: linear-gradient(135deg, #1e88e5, #0d47a1);
+            border: 1px solid #fff;
+        }
+
+        .player-seat {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            z-index: 10;
+        }
+
+        .hand {
+            display: flex;
+            gap: 4px;
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            background: linear-gradient(to bottom, rgba(25, 25, 25, 0.95), rgba(10, 10, 10, 0.95));
+            padding: 3px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.7);
+        }
+
+        .player-info.winner-badge {
+            border-color: #ffd700;
+            background: linear-gradient(to bottom, rgba(90, 70, 10, 0.95), rgba(40, 25, 0, 0.95));
+            box-shadow: 0 0 20px rgba(255, 215, 0, 1);
+        }
+
+        .player-main-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.68rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .player-combo-hint {
+            font-size: 0.58rem;
+            color: #00e676;
+            font-weight: 600;
+        }
+
+        .bet-display {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .bet-panel {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 4px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .btn-action {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 5px 9px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .btn-action:hover {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15));
+        }
+
+        .btn-action.btn-raise {
+            background: linear-gradient(to bottom, rgba(212, 175, 55, 0.4), rgba(180, 140, 30, 0.3));
+            border-color: #d4af37;
+            color: #ffd700;
+        }
+
+        .btn-action.btn-fold {
+            background: linear-gradient(to bottom, rgba(211, 47, 47, 0.4), rgba(160, 20, 20, 0.3));
+            border-color: #d32f2f;
+            color: #ff8a80;
+        }
+
+        .btn-icon {
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .raise-slider-box {
+            display: none;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px 8px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+        }
+
+        .raise-slider-box input[type="range"] {
+            flex: 1;
+            accent-color: #ffd700;
+            cursor: pointer;
+        }
+
+        .raise-val {
+            font-weight: bold;
+            color: #ffd700;
+            min-width: 34px;
+            font-size: 0.72rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>ПОКЕР</h1>
+
+        <div class="controls-panel">
+            <div class="toggle-group" id="bots-toggle">
+                <button class="toggle-btn" onclick="setBotCount(2)">2</button>
+                <button class="toggle-btn" onclick="setBotCount(3)">3</button>
+                <button class="toggle-btn" onclick="setBotCount(4)">4</button>
+                <button class="toggle-btn active" onclick="setBotCount(5)">5</button>
+                <button class="toggle-btn" onclick="setBotCount(6)">6</button>
+                <button class="toggle-btn" onclick="setBotCount(7)">7</button>
+                <button class="toggle-btn" onclick="setBotCount(8)">8</button>
+            </div>
+
+            <div class="toggle-group" id="diff-toggle">
+                <button class="toggle-btn" onclick="setDifficulty('easy')" title="Новичок">🥉</button>
+                <button class="toggle-btn active" onclick="setDifficulty('medium')" title="Любитель">🥈</button>
+                <button class="toggle-btn" onclick="setDifficulty('hard')" title="Опытный">🥇</button>
+            </div>
+        </div>
+
+        <div class="poker-table-wrapper">
+            <div class="poker-table">
+                <div class="dealer-box">
+                    <span class="dealer-avatar">🤵</span>
+                    <span id="dealer-message">Дилер: Раздаем карты...</span>
+                </div>
+
+                <div class="center-table">
+                    <div id="community-cards" class="community-cards"></div>
+
+                    <div class="pot-container">
+                        <span class="pot-label">БАНК:</span>
+                        <div class="chip chip-pot" id="pot-chip">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="table-seats"></div>
+
+            <div class="player-seat">
+                <div id="player-hand" class="hand"></div>
+                <div id="player-info-box" class="player-info">
+                    <div class="player-main-info">
+                        <span>👤 Вы: <span id="player-chips">1000</span>$</span>
+                        <div class="bet-display">
+                            <div class="chip chip-bet" id="player-bet-chip">0</div>
+                        </div>
+                    </div>
+                    <div id="player-combo-hint" class="player-combo-hint">Комбинация: —</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="raise-slider-box" class="raise-slider-box">
+            <span style="font-size: 0.68rem; color: #ccc;">Рейз:</span>
+            <input type="range" id="raise-slider" min="20" max="1000" step="10" oninput="updateRaiseVal(this.value)">
+            <span id="raise-val-text" class="raise-val">20$</span>
+            <button class="btn-action btn-raise" onclick="confirmCustomRaise()">ОК</button>
+        </div>
+
+        <div id="bet-panel" class="bet-panel">
+            <button id="btn-fold" class="btn-action btn-fold" onclick="playerAction('fold')">Фолд</button>
+            <button id="btn-call" class="btn-action" onclick="playerAction('call')">Чек / Колл</button>
+            <button id="btn-raise-toggle" class="btn-action btn-raise" onclick="toggleRaiseSlider()">Рейз 🎚️</button>
+            <button id="btn-allin" class="btn-action btn-raise" onclick="playerAction('allin')">Олл-ин</button>
+            <button class="btn-action btn-icon" onclick="resetGame()" title="Перезапуск игры">🔄</button>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playDealCardsSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            for (let i = 0; i < 4; i++) {
+                setTimeout(() => playSingleCardSound(), i * 90);
+            }
+        }
+
+        function playSingleCardSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const bufferSize = audioCtx.sampleRate * 0.06;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1400;
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        function playCheckCallSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.05);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playRaiseSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(2800 + i * 300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.04);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.04);
+                }, i * 35);
+            }
+        }
+
+        function playAllInSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(2200 + Math.random() * 600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.05);
+                }, i * 30);
+            }
+        }
+
+        function playFoldSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            playSingleCardSound();
+        }
+
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const RANK_VALUES = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+
+        const BOT_AVATARS = ['🎩', '🚬', '🥸', '👩', '🤠', '🕶️', '🧔', '👑', '🕵️‍♂️', '🦹‍♂️'];
+
+        const ARCHETYPES = [
+            { name: 'Тайтовый', icon: '🧊', desc: 'Тайтовый' },
+            { name: 'Агрессивный', icon: '🔥', desc: 'Агрессивный' },
+            { name: 'Сбалансированный', icon: '🦊', desc: 'Сбалансированный' }
+        ];
+
+        let numBots = 5;
+        let difficulty = 'medium';
+
+        let deck = [];
+        let communityCards = [];
+        let pot = 0;
+        let currentBet = 0;
+        let stage = 'preflop';
+
+        let player = { id: 'player', name: 'Вы', hand: [], chips: 1000, totalContributed: 0, bet: 0, folded: false, allIn: false };
+        let bots = [];
+        let turnIndex = 0;
+        let waitingForNextHand = false;
+        let winningSeatIndex = null;
+        let winningCardKeys = [];
+        let autoPlayInterval = null;
+
+        function setBotCount(count) {
+            numBots = count;
+            const btns = document.querySelectorAll('#bots-toggle .toggle-btn');
+            btns.forEach((b, idx) => {
+                if (idx + 2 === count) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            initBots();
+            startHand();
+        }
+
+        function setDifficulty(diff) {
+            difficulty = diff;
+            const btns = document.querySelectorAll('#diff-toggle .toggle-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            if (diff === 'easy') btns[0].classList.add('active');
+            if (diff === 'medium') btns[1].classList.add('active');
+            if (diff === 'hard') btns[2].classList.add('active');
+        }
+
+        function setDealerMessage(msg) {
+            document.getElementById('dealer-message').textContent = msg;
+        }
+
+        function createDeck() {
+            deck = [];
+            for (let suit of SUITS) {
+                for (let rank of RANKS) {
+                    deck.push({ suit, rank, val: RANK_VALUES[rank], isRed: suit === '♥' || suit === '♦', key: rank + suit });
+                }
+            }
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function initBots() {
+            bots = [];
+            for (let i = 0; i < numBots; i++) {
+                let randomArch = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
+                let randomAvatar = BOT_AVATARS[Math.floor(Math.random() * BOT_AVATARS.length)];
+                bots.push({ 
+                    id: `bot_${i+1}`, 
+                    name: `Бот ${i+1}`, 
+                    avatar: randomAvatar,
+                    archetype: randomArch, 
+                    hand: [], 
+                    chips: 1000, 
+                    totalContributed: 0, 
+                    bet: 0, 
+                    folded: false, 
+                    allIn: false 
+                });
+            }
+        }
+
+        function startHand() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            waitingForNextHand = false;
+            winningSeatIndex = null;
+            winningCardKeys = [];
+            document.getElementById('raise-slider-box').style.display = 'none';
+            document.getElementById('player-info-box').classList.remove('winner-badge');
+            
+            document.getElementById('btn-fold').style.display = 'inline-block';
+            document.getElementById('btn-call').style.display = 'inline-block';
+            document.getElementById('btn-raise-toggle').style.display = 'inline-block';
+            document.getElementById('btn-allin').style.display = 'inline-block';
+            document.getElementById('btn-call').textContent = 'Чек / Колл';
+
+            bots = bots.filter(b => b.chips > 0);
+
+            if (player.chips <= 0) {
+                setDealerMessage('Дилер: У вас закончились фишки! Перезапуск.');
+                player.chips = 1000;
+                initBots();
+            }
+
+            if (bots.length === 0) {
+                setDealerMessage('Дилер: Все боты обанкротились! Победа!');
+                initBots();
+            }
+
+            createDeck();
+            communityCards = [];
+            pot = 0;
+            currentBet = 20;
+            stage = 'preflop';
+
+            player.hand = [deck.pop(), deck.pop()];
+            player.bet = 0;
+            player.totalContributed = 0;
+            player.folded = false;
+            player.allIn = false;
+
+            bots.forEach(b => {
+                b.hand = [deck.pop(), deck.pop()];
+                b.bet = 0;
+                b.totalContributed = 0;
+                b.folded = false;
+                b.allIn = false;
+            });
+
+            playDealCardsSound();
+
+            let sb = Math.min(10, player.chips);
+            player.chips -= sb;
+            player.bet = sb;
+            player.totalContributed = sb;
+            pot += sb;
+
+            let bb = Math.min(20, bots[0].chips);
+            bots[0].chips -= bb;
+            bots[0].bet = bb;
+            bots[0].totalContributed = bb;
+            pot += bb;
+
+            turnIndex = 0;
+            setDealerMessage('Дилер: Карты разданы. Ваш ход.');
+            renderAll();
+        }
+
+        function updatePotDisplay() {
+            let totalContributions = player.totalContributed + bots.reduce((sum, b) => sum + b.totalContributed, 0);
+            pot = totalContributions;
+            document.getElementById('pot-chip').textContent = pot;
+        }
+
+        function renderAll() {
+            renderBots();
+            renderCommunityCards();
+            renderPlayerHand();
+            updatePotDisplay();
+            
+            document.getElementById('player-chips').textContent = player.chips;
+            document.getElementById('player-bet-chip').textContent = player.bet;
+
+            if (player.hand.length === 2) {
+                let evalRes = evaluateHand([...player.hand, ...communityCards]);
+                document.getElementById('player-combo-hint').textContent = `Комбинация: ${evalRes.name}`;
+            }
+
+            const callAmount = currentBet - player.bet;
+            const btnCall = document.getElementById('btn-call');
+            if (!waitingForNextHand && !player.allIn && !player.folded) {
+                btnCall.textContent = callAmount > 0 ? `Колл ${callAmount}$` : 'Чек';
+            }
+        }
+
+        function createCardEl(card, isBack = false) {
+            const cardEl = document.createElement('div');
+            if (isBack) {
+                cardEl.className = 'card card-back';
+                return cardEl;
+            }
+            cardEl.className = `card ${card.isRed ? 'red' : 'black'}`;
+            if (winningCardKeys.includes(card.key)) {
+                cardEl.classList.add('highlighted-winning-card');
+            }
+            cardEl.innerHTML = `<div>${card.rank}</div><div style="font-size:0.5rem; text-align:center;">${card.suit}</div><div style="text-align:right;">${card.rank}</div>`;
+            return cardEl;
+        }
+
+        function renderCommunityCards() {
+            const container = document.getElementById('community-cards');
+            container.innerHTML = '';
+            communityCards.forEach(c => container.appendChild(createCardEl(c)));
+        }
+
+        function renderPlayerHand() {
+            const container = document.getElementById('player-hand');
+            container.innerHTML = '';
+            player.hand.forEach(c => container.appendChild(createCardEl(c)));
+        }
+
+        function renderBots() {
+            const container = document.getElementById('table-seats');
+            container.innerHTML = '';
+
+            const totalBots = bots.length;
+
+            bots.forEach((bot, idx) => {
+                const seat = document.createElement('div');
+                seat.className = 'seat';
+
+                let angleDeg = -190 + (idx * (200 / Math.max(1, totalBots - 1)));
+                let angleRad = angleDeg * (Math.PI / 180);
+
+                let rx = 42; 
+                let ry = 42; 
+
+                let leftPos = 50 + rx * Math.cos(angleRad);
+                let topPos = 46 + ry * Math.sin(angleRad);
+
+                seat.style.left = `${leftPos}%`;
+                seat.style.top = `${topPos}%`;
+                seat.style.transform = 'translate(-50%, -50%)';
+
+                let isWinnerSeat = (winningSeatIndex === idx + 1);
+                const badge = document.createElement('div');
+                badge.className = `bot-badge ${turnIndex === idx + 1 && !waitingForNextHand ? 'active-turn' : ''} ${bot.folded ? 'folded' : ''} ${isWinnerSeat ? 'winner-badge' : ''}`;
+                
+                let cardsContainer = document.createElement('div');
+                cardsContainer.className = 'bot-cards';
+
+                let isShowdown = stage === 'showdown';
+                bot.hand.forEach(c => {
+                    cardsContainer.appendChild(createCardEl(c, !isShowdown));
+                });
+
+                badge.innerHTML = `<div>${bot.avatar} ${bot.name} ${bot.archetype.icon}<br>${bot.chips}$` +
+                    `<div class="bet-display" style="justify-content:center; margin-top:1px;">` +
+                    `<div class="chip chip-bet">${bot.bet}</div>` +
+                    `</div></div>`;
+                badge.appendChild(cardsContainer);
+
+                seat.appendChild(badge);
+                container.appendChild(seat);
+            });
+        }
+
+        function toggleRaiseSlider() {
+            if (player.allIn || player.chips === 0 || player.folded || waitingForNextHand) return;
+            const box = document.getElementById('raise-slider-box');
+            if (box.style.display === 'flex') {
+                box.style.display = 'none';
+            } else {
+                box.style.display = 'flex';
+                const slider = document.getElementById('raise-slider');
+                let minRaise = currentBet - player.bet + 20;
+                let maxRaise = player.chips;
+                if (minRaise > maxRaise) minRaise = maxRaise;
+                slider.min = minRaise;
+                slider.max = maxRaise;
+                slider.value = minRaise;
+                updateRaiseVal(minRaise);
+            }
+        }
+
+        function updateRaiseVal(val) {
+            document.getElementById('raise-val-text').textContent = `${val}$`;
+        }
+
+        function confirmCustomRaise() {
+            const val = Number(document.getElementById('raise-slider').value);
+            document.getElementById('raise-slider-box').style.display = 'none';
+            executeRaise(val);
+        }
+
+        function hideActionButtonsCompletely() {
+            document.getElementById('btn-fold').style.display = 'none';
+            document.getElementById('btn-call').style.display = 'none';
+            document.getElementById('btn-raise-toggle').style.display = 'none';
+            document.getElementById('btn-allin').style.display = 'none';
+            document.getElementById('raise-slider-box').style.display = 'none';
+        }
+
+        function executeRaise(amount) {
+            let actualAmount = Math.min(amount, player.chips);
+            player.chips -= actualAmount;
+            player.bet += actualAmount;
+            player.totalContributed += actualAmount;
+            if (player.chips === 0) {
+                player.allIn = true;
+                playAllInSound();
+                hideActionButtonsCompletely();
+            } else {
+                playRaiseSound();
+            }
+            currentBet = player.bet;
+            setDealerMessage(`Дилер: Вы повысили до ${player.bet}$`);
+            renderAll();
+            nextTurn();
+        }
+
+        function playerAction(action) {
+            if (waitingForNextHand) {
+                if (player.chips <= 0) {
+                    resetGame();
+                } else {
+                    startHand();
+                }
+                return;
+            }
+
+            if (turnIndex !== 0 || player.folded || player.allIn) return;
+            document.getElementById('raise-slider-box').style.display = 'none';
+
+            if (action === 'fold') {
+                player.folded = true;
+                playFoldSound();
+                hideActionButtonsCompletely();
+                setDealerMessage('Дилер: Вы сбросили. Торги ботов продолжаются...');
+                nextTurn();
+                return;
+            }
+
+            let callAmount = currentBet - player.bet;
+
+            if (action === 'call') {
+                let amount = Math.min(callAmount, player.chips);
+                player.chips -= amount;
+                player.bet += amount;
+                player.totalContributed += amount;
+                if (player.chips === 0) {
+                    player.allIn = true;
+                    hideActionButtonsCompletely();
+                }
+                playCheckCallSound();
+                setDealerMessage(amount > 0 ? `Дилер: Колл ${amount}$` : 'Дилер: Чек.');
+            } else if (action === 'allin') {
+                let amount = player.chips;
+                player.chips = 0;
+                player.bet += amount;
+                player.totalContributed += amount;
+                player.allIn = true;
+                if (player.bet > currentBet) currentBet = player.bet;
+                playAllInSound();
+                hideActionButtonsCompletely();
+                setDealerMessage('Дилер: Вы в Олл-ине! Боты принимают решение...');
+            }
+
+            renderAll();
+            nextTurn();
+        }
+
+        function botTurn(bIdx) {
+            let bot = bots[bIdx - 1];
+            if (bot.folded || bot.allIn || bot.chips === 0) {
+                nextTurn();
+                return;
+            }
+
+            let callAmount = currentBet - bot.bet;
+            let fullHand = [...bot.hand, ...communityCards];
+            let evalRes = evaluateHand(fullHand);
+            let handScore = evalRes.score * 10 + (evalRes.high / 14);
+
+            let action = 'call';
+
+            if (bot.archetype.desc === 'Тайтовый') {
+                if (callAmount > 40 && handScore < 1.5) action = 'fold';
+                else if (handScore >= 3.0 && Math.random() < 0.7 && bot.chips > callAmount + 30) action = 'raise';
+            } else if (bot.archetype.desc === 'Агрессивный') {
+                if (callAmount > 80 && handScore < 0.5 && Math.random() < 0.6) action = 'fold';
+                else if (Math.random() < (handScore >= 1.0 ? 0.8 : 0.45) && bot.chips > callAmount + 30) action = 'raise';
+            } else {
+                if (callAmount > 50 && handScore < 1.0 && Math.random() < 0.5) action = 'fold';
+                else if (handScore >= 2.0 && Math.random() < 0.6 && bot.chips > callAmount + 30) action = 'raise';
+            }
+
+            if (action === 'fold') {
+                bot.folded = true;
+                playFoldSound();
+                setDealerMessage(`Дилер: ${bot.name} сбросил.`);
+            } else if (action === 'raise' && bot.chips > callAmount) {
+                let raiseIncrement = 30 + Math.floor(Math.random() * 40);
+                let totalRaise = callAmount + raiseIncrement;
+                let amount = Math.min(totalRaise, bot.chips);
+                bot.chips -= amount;
+                bot.bet += amount;
+                bot.totalContributed += amount;
+                if (bot.chips === 0) {
+                    bot.allIn = true;
+                    playAllInSound();
+                } else {
+                    playRaiseSound();
+                }
+                if (bot.bet > currentBet) currentBet = bot.bet;
+                setDealerMessage(`Дилер: ${bot.name} повышает!`);
+            } else {
+                let amount = Math.min(callAmount, bot.chips);
+                bot.chips -= amount;
+                bot.bet += amount;
+                bot.totalContributed += amount;
+                if (bot.chips === 0) {
+                    bot.allIn = true;
+                    playAllInSound();
+                } else {
+                    if (amount > 0) playCheckCallSound();
+                }
+                setDealerMessage(amount > 0 ? `Дилер: ${bot.name} уравнял.` : `Дилер: ${bot.name} чекает.`);
+            }
+
+            renderAll();
+            setTimeout(nextTurn, 650);
+        }
+
+        function nextTurn() {
+            let activePlayers = [player, ...bots].filter(p => !p.folded);
+
+            if (activePlayers.length <= 1) {
+                finishGameDirectly(activePlayers[0]);
+                return;
+            }
+
+            // Проверяем, завершились ли текущие торги (все активные игроки уравняли ставку, в олл-ине или без фишек)
+            let allMatched = activePlayers.every(p => p.bet === currentBet || p.allIn || p.chips === 0);
+            if (allMatched) {
+                advanceStage();
+                return;
+            }
+
+            turnIndex = (turnIndex + 1) % (bots.length + 1);
+
+            if (isPlayerInactive(turnIndex)) {
+                nextTurn();
+                return;
+            }
+
+            if (turnIndex !== 0) {
+                let bot = bots[turnIndex - 1];
+                setDealerMessage(`Дилер: Ход ${bot.name}...`);
+                setTimeout(() => botTurn(turnIndex), 650);
+            } else {
+                if (player.folded || player.allIn) {
+                    nextTurn();
+                } else {
+                    setDealerMessage('Дилер: Ваш ход.');
+                    renderAll();
+                }
+            }
+        }
+
+        function isPlayerInactive(idx) {
+            if (idx === 0) return player.folded || player.allIn || player.chips === 0;
+            let bot = bots[idx - 1];
+            return bot.folded || bot.allIn || bot.chips === 0;
+        }
+
+        function advanceStage() {
+            player.bet = 0;
+            bots.forEach(b => b.bet = 0);
+            currentBet = 0;
+
+            let activePlayers = [player, ...bots].filter(p => !p.folded);
+            let bettingPlayers = activePlayers.filter(p => !p.allIn && p.chips > 0);
+
+            if (stage === 'preflop') {
+                stage = 'flop';
+                communityCards.push(deck.pop(), deck.pop(), deck.pop());
+                playSingleCardSound();
+                setDealerMessage('Дилер: Флоп открыт.');
+            } else if (stage === 'flop') {
+                stage = 'turn';
+                communityCards.push(deck.pop());
+                playSingleCardSound();
+                setDealerMessage('Дилер: Терн открыт.');
+            } else if (stage === 'turn') {
+                stage = 'river';
+                communityCards.push(deck.pop());
+                playSingleCardSound();
+                setDealerMessage('Дилер: Ривер открыт.');
+            } else if (stage === 'river' || bettingPlayers.length <= 1) {
+                showdown();
+                return;
+            }
+
+            turnIndex = 0;
+            renderAll();
+
+            // Если боты и игрок на олл-ине (торговать больше некому), автоматически докручиваем улицы до вскрытия
+            if (bettingPlayers.length <= 1 && stage !== 'showdown') {
+                hideActionButtonsCompletely();
+                setTimeout(autoPlayRemainingStages, 800);
+            }
+        }
+
+        function autoPlayRemainingStages() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            autoPlayInterval = setInterval(() => {
+                if (communityCards.length < 5) {
+                    communityCards.push(deck.pop());
+                    playSingleCardSound();
+                    if (communityCards.length === 4) stage = 'turn';
+                    if (communityCards.length === 5) stage = 'river';
+                    renderAll();
+                } else {
+                    clearInterval(autoPlayInterval);
+                    setTimeout(showdown, 600);
+                }
+            }, 700);
+        }
+
+        function finishGameDirectly(winner) {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            while (communityCards.length < 5) {
+                communityCards.push(deck.pop());
+            }
+            showdown();
+        }
+
+        function evaluateHand(cards) {
+            let sorted = [...cards].sort((a,b) => b.val - a.val);
+            let suits = {}, ranks = {};
+            sorted.forEach(c => {
+                suits[c.suit] = (suits[c.suit] || 0) + 1;
+                ranks[c.val] = (ranks[c.val] || 0) + 1;
+            });
+
+            let isFlush = Object.values(suits).some(count => count >= 5);
+            let uniqueRanks = [...new Set(sorted.map(c => c.val))];
+            let isStraight = false;
+            let straightHigh = 0;
+
+            for (let i = 0; i <= uniqueRanks.length - 5; i++) {
+                if (uniqueRanks[i] - uniqueRanks[i+4] === 4) {
+                    isStraight = true;
+                    straightHigh = uniqueRanks[i];
+                    break;
+                }
+            }
+
+            let rankCounts = Object.entries(ranks).map(([val, count]) => ({ val: Number(val), count }));
+            rankCounts.sort((a,b) => b.count - a.count || b.val - a.val);
+
+            if (isFlush && isStraight) return { score: 8, name: 'Стрит-флеш', high: straightHigh, cards: sorted.slice(0,5) };
+            if (rankCounts[0].count === 4) {
+                let matchVal = rankCounts[0].val;
+                return { score: 7, name: 'Каре', high: matchVal, cards: sorted.filter(c => c.val === matchVal).concat(sorted.filter(c => c.val !== matchVal)).slice(0,5) };
+            }
+            if (rankCounts[0].count === 3 && rankCounts[1] && rankCounts[1].count >= 2) {
+                return { score: 6, name: 'Фулл-хаус', high: rankCounts[0].val, cards: sorted.filter(c => c.val === rankCounts[0].val || c.val === rankCounts[1].val).slice(0,5) };
+            }
+            if (isFlush) {
+                let flushSuit = Object.keys(suits).find(s => suits[s] >= 5);
+                return { score: 5, name: 'Флеш', high: sorted[0].val, cards: sorted.filter(c => c.suit === flushSuit).slice(0,5) };
+            }
+            if (isStraight) return { score: 4, name: 'Стрит', high: straightHigh, cards: sorted.slice(0,5) };
+            if (rankCounts[0].count === 3) {
+                let val = rankCounts[0].val;
+                return { score: 3, name: 'Тройка', high: val, cards: sorted.filter(c => c.val === val).concat(sorted.filter(c => c.val !== val)).slice(0,5) };
+            }
+            if (rankCounts[0].count === 2 && rankCounts[1] && rankCounts[1].count === 2) {
+                let v1 = rankCounts[0].val, v2 = rankCounts[1].val;
+                return { score: 2, name: 'Две пары', high: v1, cards: sorted.filter(c => c.val === v1 || c.val === v2).slice(0,5) };
+            }
+            if (rankCounts[0].count === 2) {
+                let val = rankCounts[0].val;
+                return { score: 1, name: 'Пара', high: val, cards: sorted.filter(c => c.val === val).concat(sorted.filter(c => c.val !== val)).slice(0,5) };
+            }
+
+            return { score: 0, name: 'Старшая карта', high: sorted[0].val, cards: [sorted[0]] };
+        }
+
+        function resolvePots() {
+            let allPlayers = [player, ...bots];
+            let totalPot = allPlayers.reduce((sum, p) => sum + p.totalContributed, 0);
+            pot = totalPot;
+
+            let sortedByContribution = [...allPlayers].filter(p => p.totalContributed > 0).sort((a, b) => a.totalContributed - b.totalContributed);
+
+            let previousCap = 0;
+            let resultsDescription = [];
+            let mainWinner = null;
+
+            sortedByContribution.forEach((capPlayer) => {
+                let cap = capPlayer.totalContributed;
+                if (cap <= previousCap) return;
+
+                let currentPotSlice = 0;
+                let eligiblePlayers = [];
+
+                allPlayers.forEach(p => {
+                    let contributionFromThisPlayer = Math.min(p.totalContributed, cap) - Math.min(p.totalContributed, previousCap);
+                    currentPotSlice += contributionFromThisPlayer;
+
+                    if (!p.folded && p.totalContributed >= cap) {
+                        eligiblePlayers.push(p);
+                    }
+                });
+
+                if (currentPotSlice > 0 && eligiblePlayers.length > 0) {
+                    let bestScore = -1;
+                    let sliceWinner = eligiblePlayers[0];
+                    let winningCombo = '';
+                    let bestEval = null;
+
+                    eligiblePlayers.forEach(p => {
+                        let fullHand = [...p.hand, ...communityCards];
+                        let evalRes = evaluateHand(fullHand);
+                        let totalScore = evalRes.score * 100 + evalRes.high;
+                        if (totalScore > bestScore) {
+                            bestScore = totalScore;
+                            sliceWinner = p;
+                            winningCombo = evalRes.name;
+                            bestEval = evalRes;
+                        }
+                    });
+
+                    sliceWinner.chips += currentPotSlice;
+                    mainWinner = sliceWinner;
+                    let winnerName = sliceWinner === player ? 'Вы' : `${sliceWinner.avatar} ${sliceWinner.name}`;
+
+                    if (bestEval && bestEval.cards) {
+                        winningCardKeys = bestEval.cards.map(c => c.key);
+                    }
+
+                    if (sliceWinner === player) {
+                        winningSeatIndex = 'player';
+                        document.getElementById('player-info-box').classList.add('winner-badge');
+                    } else {
+                        let bIndex = bots.indexOf(sliceWinner) + 1;
+                        winningSeatIndex = bIndex;
+                    }
+
+                    resultsDescription.push(`${winnerName} забрал ${currentPotSlice}$ (${winningCombo})`);
+                }
+
+                previousCap = cap;
+            });
+
+            return { text: resultsDescription.join(' | '), mainWinner };
+        }
+
+        function showdown() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            stage = 'showdown';
+            let res = resolvePots();
+            renderAll();
+
+            setDealerMessage(`Дилер: Вскрытие! Победитель: ${res.text}.`);
+            waitingForNextHand = true;
+
+            document.getElementById('bet-panel').style.display = 'flex';
+            document.getElementById('btn-fold').style.display = 'none';
+            document.getElementById('btn-raise-toggle').style.display = 'none';
+            document.getElementById('btn-allin').style.display = 'none';
+            
+            const btnCall = document.getElementById('btn-call');
+            btnCall.style.display = 'inline-block';
+
+            if (player.chips > 0) {
+                btnCall.textContent = 'Следующая ➡️';
+            } else {
+                btnCall.textContent = 'Начать заново 🔄';
+            }
+        }
+
+        function resetGame() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            player.chips = 1000;
+            initBots();
+            startHand();
+        }
+
+        // Инициализация при старте
+        initBots();
+        startHand();
+    </script>
+</body>
+</html>
