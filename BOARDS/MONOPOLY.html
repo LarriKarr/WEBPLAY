@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ•ART LUXURY MONOPOLY ULTRA</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', 'Segoe UI', serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0f2b22 0%, #030805 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 6px;
+            overflow-x: hidden;
+        }
+
+        /* ХОЛСТ ДЛЯ САЛЮТА ПОБЕДЫ */
+        #fx-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .game-container {
+            background: radial-gradient(ellipse at center, rgba(14, 65, 47, 0.98) 0%, rgba(2, 12, 8, 0.99) 100%);
+            border: 4px solid #d4af37;
+            border-radius: 20px;
+            padding: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.95), inset 0 0 35px rgba(212, 175, 55, 0.3);
+            max-width: 480px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+            padding-bottom: 6px;
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 1.15rem;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 10px rgba(212,175,55,0.3);
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 1px solid #fff5cc;
+            color: #030805;
+            padding: 6px 14px;
+            font-size: 0.72rem;
+            font-weight: 900;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.8);
+            transition: transform 0.1s, filter 0.1s;
+        }
+        .btn-action:active { transform: translateY(2px); }
+
+        /* ЭКРАН НАСТРОЙКИ */
+        .setup-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 10, 7, 0.97);
+            border-radius: 16px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            gap: 15px;
+            box-shadow: inset 0 0 40px rgba(212, 175, 55, 0.2);
+        }
+
+        .setup-modal h2 {
+            color: #ffd700;
+            font-size: 1.3rem;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .setup-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            background: rgba(212, 175, 55, 0.08);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(212, 175, 55, 0.35);
+        }
+
+        .setup-group label { font-size: 0.82rem; font-weight: bold; color: #ffd700; }
+
+        .setup-select {
+            background: #081d16;
+            color: #fff;
+            border: 1.5px solid #d4af37;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            outline: none;
+        }
+
+        /* ПАНЕЛЬ ОБЪЕМНЫХ ЖЕТОНОВ */
+        .players-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            width: 100%;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .player-badge {
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.6);
+            border: 2px solid #ffd700;
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s;
+        }
+
+        .player-badge.user-badge { border-radius: 20px; }
+        .player-badge.bot-badge { border-radius: 8px; }
+
+        .player-badge.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #00e676, inset 0 0 10px rgba(255,255,255,0.9);
+            border-color: #fff;
+        }
+
+        .avatar-icon {
+            width: 28px;
+            height: 28px;
+            background: rgba(0,0,0,0.35);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+        }
+
+        .avatar-icon svg { width: 18px; height: 18px; fill: #fff; filter: drop-shadow(0 1px 2px #000); }
+
+        .badge-info { display: flex; flex-direction: column; line-height: 1.1; overflow: hidden; }
+        .badge-name { font-size: 0.65rem; font-weight: bold; color: #fff; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+        .badge-balance { font-size: 0.8rem; font-weight: 900; color: #ffd700; text-shadow: 0 1px 2px #000; }
+
+        .status-message {
+            font-size: 0.82rem;
+            font-weight: bold;
+            color: #00e676;
+            min-height: 24px;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+
+        /* ИГРОВАЯ ДОСКА */
+        .board-grid {
+            width: 100%;
+            height: 390px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 4px;
+            background: #030e09;
+            border: 4px solid #8a671c;
+            border-radius: 14px;
+            padding: 5px;
+            margin-bottom: 10px;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.95);
+        }
+
+        .cell {
+            background: linear-gradient(135deg, rgba(22, 75, 57, 0.95) 0%, rgba(6, 26, 19, 0.98) 100%);
+            border: 1.5px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px;
+            font-size: 0.62rem;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.05);
+            overflow: hidden;
+        }
+
+        .cell-color {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        }
+
+        .cell-icon {
+            width: 24px;
+            height: 24px;
+            margin: 1px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.8));
+        }
+
+        .cell-icon svg { width: 100%; height: 100%; }
+
+        .cell-name { font-weight: bold; line-height: 1; color: #fff; text-shadow: 0 1px 3px #000; }
+        .cell-price { color: #ffd700; font-size: 0.58rem; font-weight: bold; text-shadow: 0 1px 2px #000; }
+
+        .owner-badge {
+            position: absolute;
+            top: 2px; right: 2px;
+            width: 11px; height: 11px;
+            border-radius: 50%;
+            border: 1.5px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.9);
+        }
+
+        /* СЕТКА ДЛЯ АККУРАТНОГО РАЗМЕЩЕНИЯ ВСЕХ ФИШЕК ВНУТРИ КЛЕТКИ */
+        .tokens-grid {
+            position: absolute;
+            bottom: 3px;
+            width: 100%;
+            height: 22px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 2px;
+            padding: 0 4px;
+            justify-items: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .token {
+            width: 13px;
+            height: 13px;
+            border: 1.5px solid #fff;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.9), inset -1px -1px 3px rgba(0,0,0,0.6);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .token.user-token { border-radius: 50%; }
+        .token.bot-token { border-radius: 3px; }
+
+        /* ОБЪЕМНЫЙ ПРЫЖОК ФИШКИ */
+        .token.jumping {
+            transform: translateY(-14px) scale(1.4);
+            z-index: 20;
+        }
+
+        /* ЦЕНТР ДОСКИ */
+        .board-center {
+            grid-column: 2 / 4;
+            grid-row: 2 / 4;
+            background: radial-gradient(circle, #0e3d2c 0%, #020a07 100%);
+            border: 2px dashed rgba(212, 175, 55, 0.45);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            gap: 8px;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.85);
+        }
+
+        .dice-container { display: flex; gap: 12px; }
+
+        .die {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.8), inset 0 0 4px rgba(0,0,0,0.15);
+            border: 2px solid #d4af37;
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 4px;
+            position: relative;
+        }
+
+        @keyframes rollAnim {
+            0% { transform: rotate(0deg) translateY(0) scale(0.8); }
+            50% { transform: rotate(180deg) translateY(-10px) scale(1.25); filter: brightness(1.2); }
+            100% { transform: rotate(360deg) translateY(0) scale(1); }
+        }
+        .die.rolling { animation: rollAnim 0.45s ease; }
+
+        .pip {
+            background: #111;
+            border-radius: 50%;
+            width: 5px; height: 5px;
+            align-self: center; justify-self: center;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.5);
+        }
+
+        .p-1 { grid-area: 2 / 2; }
+        .p-2-1 { grid-area: 1 / 3; } .p-2-2 { grid-area: 3 / 1; }
+        .p-3-1 { grid-area: 1 / 3; } .p-3-2 { grid-area: 2 / 2; } .p-3-3 { grid-area: 3 / 1; }
+        .p-4-1 { grid-area: 1 / 1; } .p-4-2 { grid-area: 1 / 3; } .p-4-3 { grid-area: 3 / 1; } .p-4-4 { grid-area: 3 / 3; }
+        .p-5-1 { grid-area: 1 / 1; } .p-5-2 { grid-area: 1 / 3; } .p-5-3 { grid-area: 2 / 2; } .p-5-4 { grid-area: 3 / 1; } .p-5-5 { grid-area: 3 / 3; }
+        .p-6-1 { grid-area: 1 / 1; } .p-6-2 { grid-area: 1 / 3; } .p-6-3 { grid-area: 2 / 1; } .p-6-4 { grid-area: 2 / 3; } .p-6-5 { grid-area: 3 / 1; } .p-6-6 { grid-area: 3 / 3; }
+
+        .control-btns { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+
+        .btn-game {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 50%, #8a671c 100%);
+            border: 1.5px solid #fff;
+            color: #000;
+            padding: 8px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.6);
+            transition: all 0.15s ease;
+        }
+        .btn-game:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+
+    <canvas id="fx-canvas"></canvas>
+
+    <div class="game-container">
+        <!-- НАСТРОЙКА ИГРОКОВ -->
+        <div class="setup-modal" id="setup-modal">
+            <h2>AZ•ART MONOPOLY</h2>
+            <div class="setup-group">
+                <label>Живые игроки:</label>
+                <select class="setup-select" id="users-count">
+                    <option value="1">1 Игрок</option>
+                    <option value="2">2 Игрока</option>
+                    <option value="3">3 Игрока</option>
+                    <option value="4">4 Игрока</option>
+                </select>
+            </div>
+            <div class="setup-group">
+                <label>Боты (ИИ):</label>
+                <select class="setup-select" id="bots-count">
+                    <option value="1" selected>1 Бот</option>
+                    <option value="2">2 Бота</option>
+                    <option value="3">3 Бота</option>
+                    <option value="0">Без ботов</option>
+                </select>
+            </div>
+            <button class="btn-action" style="padding: 10px 24px; font-size: 0.9rem;" onclick="startGameFromModal()">НАЧАТЬ ИГРУ</button>
+        </div>
+
+        <div class="header-panel">
+            <h1>AZ•ART MONOPOLY</h1>
+            <button class="btn-action" onclick="showSetup()">СБРОС</button>
+        </div>
+
+        <!-- ЖЕТОНЫ БАЛАНСОВ -->
+        <div class="players-bar" id="players-bar"></div>
+
+        <div class="status-message" id="status-message">Бросайте кости!</div>
+
+        <!-- ДОСКА -->
+        <div class="board-grid" id="board-grid">
+            <div class="board-center">
+                <div class="dice-container">
+                    <div class="die" id="die1"></div>
+                    <div class="die" id="die2"></div>
+                </div>
+                <div class="control-btns">
+                    <button class="btn-game" id="roll-btn" onclick="rollDice()">БРОСИТЬ КОСТИ</button>
+                    <button class="btn-game" id="buy-btn" onclick="buyProperty()" style="display:none; background: linear-gradient(180deg, #b2ff59 0%, #00e676 100%);">КУПИТЬ ОБЪЕКТ</button>
+                    <button class="btn-game" id="end-btn" onclick="endTurn()" style="display:none;">ЗАВЕРШИТЬ ХОД</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* CANVAS САЛЮТ ПОБЕДЫ */
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function launchConfetti() {
+            for (let i = 0; i < 70; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12 - 4,
+                    color: ['#ffd700', '#00e676', '#ffffff', '#e91e63'][Math.floor(Math.random() * 4)],
+                    size: Math.random() * 6 + 3,
+                    alpha: 1
+                });
+            }
+        }
+
+        function updateFx() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.015;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+            requestAnimationFrame(updateFx);
+        }
+        updateFx();
+
+        /* ЗВУКОВОЙ ДВИЖОК WEB AUDIO API */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'dice') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(340, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            } else if (type === 'step') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(480, now);
+                osc.frequency.exponentialRampToValueAtTime(180, now + 0.05);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            } else if (type === 'buy') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.15);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            } else if (type === 'pay') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        const avatarSVGs = [
+            '<svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>',
+            '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+            '<svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4h14v4z"/></svg>',
+            '<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.38-1 1.72V7h2a2 2 0 012 2v1h1a2 2 0 012 2v5a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H9a2 2 0 01-2-2v-1H6a2 2 0 012-2h1V9a2 2 0 012-2h2V5.72A2 2 0 0110 4a2 2 0 012-2z"/></svg>'
+        ];
+
+        const cellIcons = {
+            start: '<svg viewBox="0 0 24 24" fill="#00e676"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg>',
+            yacht: '<svg viewBox="0 0 24 24" fill="#e91e63"><path d="M4 16l8-12 8 12H4zm0 2h16l-2 3H6l-2-3z"/></svg>',
+            casino: '<svg viewBox="0 0 24 24" fill="#e91e63"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 12c-2.33 0-4.32-1.45-5.12-3.5h10.24c-.8 2.05-2.79 3.5-5.12 3.5z"/></svg>',
+            tax: '<svg viewBox="0 0 24 24" fill="#ff1744"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>',
+            hotel: '<svg viewBox="0 0 24 24" fill="#2196f3"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v10h2v-3h4v3h2V7z"/></svg>',
+            villa: '<svg viewBox="0 0 24 24" fill="#2196f3"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>',
+            rest: '<svg viewBox="0 0 24 24" fill="#29b6f6"><path d="M14 6l-1-2H5v17h2v-7h5l1 2h7V6h-6z"/></svg>',
+            jet: '<svg viewBox="0 0 24 24" fill="#ffd700"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>',
+            penthouse: '<svg viewBox="0 0 24 24" fill="#ffd700"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>',
+            chance: '<svg viewBox="0 0 24 24" fill="#ab47bc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>',
+            golf: '<svg viewBox="0 0 24 24" fill="#4caf50"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>',
+            island: '<svg viewBox="0 0 24 24" fill="#4caf50"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>'
+        };
+
+        const cellsData = [
+            { id: 0, name: "СТАРТ", price: 0, color: null, type: "start", icon: cellIcons.start },
+            { id: 1, name: "Яхт-Клуб", price: 150, rent: 30, color: "#e91e63", type: "prop", icon: cellIcons.yacht },
+            { id: 2, name: "Казино AZ", price: 200, rent: 45, color: "#e91e63", type: "prop", icon: cellIcons.casino },
+            { id: 3, name: "ШТРАФ", price: 100, color: null, type: "tax", icon: cellIcons.tax },
+            { id: 4, name: "Отель Ritz", price: 250, rent: 60, color: "#2196f3", type: "prop", icon: cellIcons.hotel },
+            { id: 5, name: "Вилла Monaco", price: 300, rent: 75, color: "#2196f3", type: "prop", icon: cellIcons.villa },
+            { id: 6, name: "ОТДЫХ", price: 0, color: null, type: "rest", icon: cellIcons.rest },
+            { id: 7, name: "Джет AZ", price: 350, rent: 90, color: "#ffd700", type: "prop", icon: cellIcons.jet },
+            { id: 8, name: "Пентхаус", price: 400, rent: 110, color: "#ffd700", type: "prop", icon: cellIcons.penthouse },
+            { id: 9, name: "ШАНС", price: 0, color: null, type: "chance", icon: cellIcons.chance },
+            { id: 10, name: "Гольф-Клуб", price: 450, rent: 130, color: "#4caf50", type: "prop", icon: cellIcons.golf },
+            { id: 11, name: "Остров AZ", price: 500, rent: 160, color: "#4caf50", type: "prop", icon: cellIcons.island }
+        ];
+
+        const gridPositions = [
+            { r: 4, c: 1 }, { r: 3, c: 1 }, { r: 2, c: 1 }, { r: 1, c: 1 },
+            { r: 1, c: 2 }, { r: 1, c: 3 }, { r: 1, c: 4 }, { r: 2, c: 4 },
+            { r: 3, c: 4 }, { r: 4, c: 4 }, { r: 4, c: 3 }, { r: 4, c: 2 }
+        ];
+
+        const playerColors = [
+            'linear-gradient(135deg, #1b5e20 0%, #388e3c 100%)',
+            'linear-gradient(135deg, #b71c1c 0%, #d32f2f 100%)',
+            'linear-gradient(135deg, #0d47a1 0%, #1976d2 100%)',
+            'linear-gradient(135deg, #f57f17 0%, #fbc02d 100%)'
+        ];
+
+        let players = [];
+        let properties = {};
+        let turn = 0;
+        let isRolled = false;
+
+        function showSetup() {
+            document.getElementById('setup-modal').style.display = 'flex';
+        }
+
+        function startGameFromModal() {
+            let numUsers = parseInt(document.getElementById('users-count').value);
+            let numBots = parseInt(document.getElementById('bots-count').value);
+
+            players = [];
+            let colorIdx = 0;
+
+            for(let i=0; i<numUsers; i++) {
+                players.push({
+                    id: players.length,
+                    name: `Игрок ${i+1}`,
+                    isBot: false,
+                    balance: 1500,
+                    pos: 0,
+                    bg: playerColors[colorIdx % playerColors.length],
+                    svg: avatarSVGs[i % avatarSVGs.length]
+                });
+                colorIdx++;
+            }
+
+            for(let j=0; j<numBots; j++) {
+                players.push({
+                    id: players.length,
+                    name: `Бот ${j+1}`,
+                    isBot: true,
+                    balance: 1500,
+                    pos: 0,
+                    bg: playerColors[colorIdx % playerColors.length],
+                    svg: avatarSVGs[(j + 2) % avatarSVGs.length]
+                });
+                colorIdx++;
+            }
+
+            document.getElementById('setup-modal').style.display = 'none';
+            initGame();
+        }
+
+        function initGame() {
+            properties = {};
+            turn = 0;
+            isRolled = false;
+
+            renderDie('die1', 1);
+            renderDie('die2', 1);
+            
+            resetButtons();
+            renderBadges();
+            renderBoard();
+            updateUI();
+
+            document.getElementById('status-message').textContent = `Ход «${players[turn].name}». Бросайте кости!`;
+            if (players[turn].isBot) setTimeout(botTurnLogic, 800);
+        }
+
+        function renderBadges() {
+            const bar = document.getElementById('players-bar');
+            bar.innerHTML = '';
+
+            players.forEach((p, idx) => {
+                const badge = document.createElement('div');
+                badge.className = `player-badge ${p.isBot ? 'bot-badge' : 'user-badge'}`;
+                badge.id = `pbadge-${idx}`;
+                badge.style.background = p.bg;
+
+                badge.innerHTML = `
+                    <div class="avatar-icon">${p.svg}</div>
+                    <div class="badge-info">
+                        <div class="badge-name">${p.name} ${p.isBot ? '(ИИ)' : ''}</div>
+                        <div class="badge-balance" id="bal-${idx}">$${p.balance}</div>
+                    </div>
+                `;
+                bar.appendChild(badge);
+            });
+        }
+
+        function renderDie(dieId, val) {
+            const die = document.getElementById(dieId);
+            die.innerHTML = '';
+            const map = {
+                1: ['p-1'],
+                2: ['p-2-1', 'p-2-2'],
+                3: ['p-3-1', 'p-3-2', 'p-3-3'],
+                4: ['p-4-1', 'p-4-2', 'p-4-3', 'p-4-4'],
+                5: ['p-5-1', 'p-5-2', 'p-5-3', 'p-5-4', 'p-5-5'],
+                6: ['p-6-1', 'p-6-2', 'p-6-3', 'p-6-4', 'p-6-5', 'p-6-6']
+            };
+            const pips = map[val] || [];
+            pips.forEach(cls => {
+                const pip = document.createElement('div');
+                pip.className = `pip ${cls}`;
+                die.appendChild(pip);
+            });
+        }
+
+        function renderBoard() {
+            const boardGrid = document.getElementById('board-grid');
+            document.querySelectorAll('.cell').forEach(c => c.remove());
+
+            cellsData.forEach((cell, idx) => {
+                const cellEl = document.createElement('div');
+                cellEl.className = 'cell';
+                const pos = gridPositions[idx];
+                cellEl.style.gridRow = pos.r;
+                cellEl.style.gridColumn = pos.c;
+
+                if (cell.color) {
+                    const colorBar = document.createElement('div');
+                    colorBar.className = 'cell-color';
+                    colorBar.style.background = cell.color;
+                    cellEl.appendChild(colorBar);
+                }
+
+                const iconEl = document.createElement('div');
+                iconEl.className = 'cell-icon';
+                iconEl.innerHTML = cell.icon;
+                cellEl.appendChild(iconEl);
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'cell-name';
+                nameEl.textContent = cell.name;
+                cellEl.appendChild(nameEl);
+
+                if (cell.price > 0) {
+                    const priceEl = document.createElement('div');
+                    priceEl.className = 'cell-price';
+                    priceEl.textContent = `$${cell.price}`;
+                    cellEl.appendChild(priceEl);
+                }
+
+                if (properties[cell.id] !== undefined) {
+                    const ownerBadge = document.createElement('div');
+                    ownerBadge.className = 'owner-badge';
+                    ownerBadge.style.background = players[properties[cell.id]].bg;
+                    cellEl.appendChild(ownerBadge);
+                }
+
+                /* КОМПАКТНАЯ АДАПТИВНАЯ СЕТКА ФИШЕК ВНУТРИ КЛЕТКИ */
+                const tokensGrid = document.createElement('div');
+                tokensGrid.className = 'tokens-grid';
+                
+                players.forEach(p => {
+                    if (p.pos === cell.id && p.balance > 0) {
+                        const token = document.createElement('div');
+                        token.className = `token ${p.isBot ? 'bot-token' : 'user-token'}`;
+                        token.style.background = p.bg;
+                        token.id = `token-${p.id}`;
+                        tokensGrid.appendChild(token);
+                    }
+                });
+                cellEl.appendChild(tokensGrid);
+
+                boardGrid.appendChild(cellEl);
+            });
+        }
+
+        function updateUI() {
+            players.forEach((p, idx) => {
+                let balEl = document.getElementById(`bal-${idx}`);
+                if (balEl) balEl.textContent = `$${p.balance}`;
+
+                let badge = document.getElementById(`pbadge-${idx}`);
+                if (badge) badge.classList.toggle('active', turn === idx);
+            });
+        }
+
+        function resetButtons() {
+            let activeP = players[turn];
+            let isHuman = activeP && !activeP.isBot;
+
+            document.getElementById('roll-btn').style.display = isHuman && !isRolled ? 'block' : 'none';
+            document.getElementById('buy-btn').style.display = 'none';
+            document.getElementById('end-btn').style.display = isHuman && isRolled ? 'block' : 'none';
+        }
+
+        function rollDice() {
+            if (isRolled || players[turn].isBot) return;
+            playSound('dice');
+
+            const die1 = document.getElementById('die1');
+            const die2 = document.getElementById('die2');
+            die1.classList.add('rolling');
+            die2.classList.add('rolling');
+
+            setTimeout(() => {
+                let d1 = Math.floor(Math.random() * 6) + 1;
+                let d2 = Math.floor(Math.random() * 6) + 1;
+
+                renderDie('die1', d1);
+                renderDie('die2', d2);
+
+                die1.classList.remove('rolling');
+                die2.classList.remove('rolling');
+
+                isRolled = true;
+                animateStepByStep(turn, d1 + d2);
+            }, 450);
+        }
+
+        function animateStepByStep(playerId, stepsLeft) {
+            if (stepsLeft <= 0) {
+                handleCellLanding(playerId);
+                return;
+            }
+
+            let p = players[playerId];
+            let oldPos = p.pos;
+            p.pos = (p.pos + 1) % 12;
+
+            if (p.pos < oldPos) {
+                p.balance += 200;
+                playSound('buy');
+                updateUI();
+            }
+
+            playSound('step');
+            renderBoard();
+
+            const tokenEl = document.getElementById(`token-${playerId}`);
+            if (tokenEl) tokenEl.classList.add('jumping');
+
+            setTimeout(() => {
+                animateStepByStep(playerId, stepsLeft - 1);
+            }, 250);
+        }
+
+        function handleCellLanding(playerId) {
+            let p = players[playerId];
+            let cell = cellsData[p.pos];
+
+            if (cell.type === 'prop') {
+                if (properties[cell.id] === undefined) {
+                    if (!p.isBot) {
+                        if (p.balance >= cell.price) {
+                            document.getElementById('status-message').textContent = `Купить «${cell.name}» за $${cell.price}?`;
+                            document.getElementById('buy-btn').style.display = 'block';
+                        } else {
+                            document.getElementById('status-message').textContent = `Недостаточно средств для «${cell.name}».`;
+                        }
+                    } else {
+                        if (p.balance >= cell.price) {
+                            p.balance -= cell.price;
+                            properties[cell.id] = playerId;
+                            playSound('buy');
+                            document.getElementById('status-message').textContent = `${p.name} купил «${cell.name}» за $${cell.price}!`;
+                        }
+                    }
+                } else if (properties[cell.id] !== playerId) {
+                    let ownerId = properties[cell.id];
+                    let rent = cell.rent;
+                    p.balance -= rent;
+                    players[ownerId].balance += rent;
+                    playSound('pay');
+
+                    document.getElementById('status-message').textContent = `${p.name} оплатил аренду $${rent} игроку ${players[ownerId].name}!`;
+                }
+            } else if (cell.type === 'tax') {
+                p.balance -= cell.price;
+                playSound('pay');
+                document.getElementById('status-message').textContent = `${p.name} оплатил штраф $${cell.price}!`;
+            } else if (cell.type === 'chance') {
+                let bonus = 150;
+                p.balance += bonus;
+                playSound('buy');
+                document.getElementById('status-message').textContent = `${p.name} получил подарок по Шансу +$${bonus}!`;
+            }
+
+            renderBoard();
+            updateUI();
+            checkBankruptcy();
+
+            if (!p.isBot) {
+                document.getElementById('end-btn').style.display = 'block';
+                document.getElementById('roll-btn').style.display = 'none';
+            }
+        }
+
+        function buyProperty() {
+            let p = players[turn];
+            let cell = cellsData[p.pos];
+
+            if (p.balance >= cell.price && properties[cell.id] === undefined) {
+                p.balance -= cell.price;
+                properties[cell.id] = turn;
+                playSound('buy');
+                launchConfetti();
+                document.getElementById('status-message').textContent = `Приобретено: «${cell.name}»!`;
+                document.getElementById('buy-btn').style.display = 'none';
+                renderBoard();
+                updateUI();
+            }
+        }
+
+        function endTurn() {
+            isRolled = false;
+
+            do {
+                turn = (turn + 1) % players.length;
+            } while (players[turn].balance <= 0 && getActivePlayersCount() > 1);
+
+            resetButtons();
+            updateUI();
+
+            let activeP = players[turn];
+            document.getElementById('status-message').textContent = `Ход игрока «${activeP.name}»...`;
+
+            if (activeP.isBot) {
+                setTimeout(botTurnLogic, 800);
+            }
+        }
+
+        function botTurnLogic() {
+            if (players[turn].balance <= 0) return;
+            playSound('dice');
+
+            const die1 = document.getElementById('die1');
+            const die2 = document.getElementById('die2');
+            die1.classList.add('rolling');
+            die2.classList.add('rolling');
+
+            setTimeout(() => {
+                let d1 = Math.floor(Math.random() * 6) + 1;
+                let d2 = Math.floor(Math.random() * 6) + 1;
+
+                renderDie('die1', d1);
+                renderDie('die2', d2);
+
+                die1.classList.remove('rolling');
+                die2.classList.remove('rolling');
+
+                setTimeout(() => {
+                    animateStepByStep(turn, d1 + d2);
+                    setTimeout(() => {
+                        if (getActivePlayersCount() > 1) {
+                            endTurn();
+                        }
+                    }, (d1 + d2) * 250 + 800);
+                }, 400);
+            }, 450);
+        }
+
+        function getActivePlayersCount() {
+            return players.filter(p => p.balance > 0).length;
+        }
+
+        function checkBankruptcy() {
+            let active = players.filter(p => p.balance > 0);
+            if (active.length === 1) {
+                document.getElementById('status-message').textContent = `🎉 ПОБЕДИЛ ИГРОК «${active[0].name}»!`;
+                launchConfetti();
+                document.getElementById('roll-btn').style.display = 'none';
+                document.getElementById('end-btn').style.display = 'none';
+            }
+        }
+
+        showSetup();
+    </script>
+</body>
+</html>

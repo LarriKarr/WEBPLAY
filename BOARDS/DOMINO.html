@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ•ART LUXURY DOMINO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', 'Segoe UI', serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: radial-gradient(circle, #0f2b22 0%, #030805 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: radial-gradient(ellipse at center, rgba(12, 60, 43, 0.98) 0%, rgba(2, 15, 10, 0.99) 100%);
+            border: 3px solid #d4af37;
+            border-radius: 18px;
+            padding: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.9), inset 0 0 35px rgba(212, 175, 55, 0.2);
+            max-width: 440px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+            padding-bottom: 6px;
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            font-family: 'Georgia', serif;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.9);
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 1px solid #fff5cc;
+            color: #030805;
+            padding: 5px 12px;
+            font-size: 0.72rem;
+            font-weight: 900;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+        }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 6px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.78rem;
+            font-weight: bold;
+        }
+
+        .stats-panel span { color: #ffd700; }
+
+        .status-message {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #00e676;
+            min-height: 22px;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+
+        .table-area {
+            width: 100%;
+            height: 200px;
+            background: radial-gradient(circle, #144e3d 0%, #061c13 100%);
+            border: 3px solid #8a671c;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.85);
+            margin-bottom: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            white-space: nowrap;
+        }
+
+        .domino-chain {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin: auto;
+        }
+
+        .domino-tile {
+            background: linear-gradient(135deg, #1c1a17 0%, #080706 100%);
+            border: 1.5px solid #d4af37;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.8), inset 0 0 4px rgba(255,215,0,0.15);
+            display: flex;
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .player-hand .domino-tile {
+            width: 30px;
+            height: 56px;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2px;
+        }
+
+        .player-hand .domino-divider {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #8a671c, #ffd700, #8a671c);
+            margin: 1px 0;
+        }
+
+        .domino-chain .domino-tile {
+            width: 56px;
+            height: 30px;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 2px;
+        }
+
+        .domino-chain .domino-tile.is-double {
+            width: 30px;
+            height: 56px;
+            flex-direction: column;
+        }
+
+        .domino-chain .domino-divider {
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, #8a671c, #ffd700, #8a671c);
+            margin: 0 1px;
+        }
+
+        .domino-chain .domino-tile.is-double .domino-divider {
+            width: 100%;
+            height: 2px;
+            margin: 1px 0;
+        }
+
+        .domino-tile.playable {
+            border-color: #00e676;
+            box-shadow: 0 0 10px #00e676;
+            transform: translateY(-4px);
+        }
+
+        .domino-half {
+            flex: 1;
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 1px;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .pip {
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, #fff8d6 0%, #ffd700 70%, #b8860b 100%);
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .player-hand-container {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .hand-label {
+            font-size: 0.72rem;
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .player-hand {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 6px 2px;
+            min-height: 70px;
+            align-items: center;
+        }
+
+        .bazar-btn {
+            background: linear-gradient(180deg, #2b1f0d 0%, #120d05 100%);
+            border: 1.5px solid #d4af37;
+            color: #ffd700;
+            padding: 8px 14px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+            margin-top: 4px;
+            width: 100%;
+        }
+        .bazar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .side-picker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(3, 8, 5, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+        }
+        .side-btn {
+            background: #d4af37;
+            color: #000;
+            border: none;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="header-panel">
+            <h1>AZ•ART DOMINO</h1>
+            <button class="btn-action" onclick="initGame()">НОВАЯ ИГРА</button>
+        </div>
+
+        <div class="stats-panel">
+            <div>Соперник: <span id="bot-count">7</span> шт.</div>
+            <div>Базар: <span id="bazar-count">14</span> шт.</div>
+        </div>
+
+        <div class="status-message" id="status-message">Ваш ход!</div>
+
+        <div class="table-area" id="table-area">
+            <div class="domino-chain" id="domino-chain"></div>
+        </div>
+
+        <div class="side-picker" id="side-picker" style="display: none;">
+            <button class="side-btn" onclick="confirmSideMove('left')">◀ Влево</button>
+            <button class="side-btn" onclick="confirmSideMove('right')">Вправо ▶</button>
+        </div>
+
+        <div class="player-hand-container">
+            <div class="hand-label">
+                <span>Ваши кости:</span>
+                <span id="player-status">Ходите</span>
+            </div>
+            <div class="player-hand" id="player-hand"></div>
+            <button class="bazar-btn" id="bazar-btn" onclick="drawFromBazar()">Взять из базара</button>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'tile') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            } else if (type === 'bazar') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.05);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        const winOsc = audioCtx.createOscillator();
+                        const winGain = audioCtx.createGain();
+                        winOsc.type = 'sine';
+                        winOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        winGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        winGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                        winOsc.connect(winGain);
+                        winGain.connect(audioCtx.destination);
+                        winOsc.start();
+                        winOsc.stop(audioCtx.currentTime + 0.25);
+                    }, idx * 90);
+                });
+                return;
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        let deck = [];
+        let playerHand = [];
+        let botHand = [];
+        let chain = [];
+        let turn = 'player';
+        let selectedTileIndex = -1;
+
+        function initGame() {
+            deck = [];
+            playerHand = [];
+            botHand = [];
+            chain = [];
+            turn = 'player';
+            selectedTileIndex = -1;
+
+            for (let i = 0; i <= 6; i++) {
+                for (let j = i; j <= 6; j++) {
+                    deck.push({ left: i, right: j });
+                }
+            }
+
+            deck.sort(() => Math.random() - 0.5);
+
+            playerHand = deck.splice(0, 7);
+            botHand = deck.splice(0, 7);
+
+            document.getElementById('side-picker').style.display = 'none';
+            document.getElementById('status-message').textContent = 'Ваш ход!';
+            renderUI();
+        }
+
+        function getChainEnds() {
+            if (chain.length === 0) return { left: null, right: null };
+            return {
+                left: chain[0].left,
+                right: chain[chain.length - 1].right
+            };
+        }
+
+        function renderUI() {
+            document.getElementById('bot-count').textContent = botHand.length;
+            document.getElementById('bazar-count').textContent = deck.length;
+
+            const chainEl = document.getElementById('domino-chain');
+            chainEl.innerHTML = '';
+            chain.forEach(tile => {
+                chainEl.appendChild(createTileElement(tile.left, tile.right, tile.left === tile.right));
+            });
+
+            const tableArea = document.getElementById('table-area');
+            tableArea.scrollLeft = tableArea.scrollWidth;
+
+            const playerHandEl = document.getElementById('player-hand');
+            playerHandEl.innerHTML = '';
+
+            let ends = getChainEnds();
+            let hasValidMove = false;
+
+            playerHand.forEach((tile, index) => {
+                let playable = (chain.length === 0) || 
+                               (tile.left === ends.left || tile.right === ends.left || 
+                                tile.left === ends.right || tile.right === ends.right);
+
+                if (playable) hasValidMove = true;
+
+                let tileEl = createTileElement(tile.left, tile.right, false);
+                if (playable && turn === 'player') {
+                    tileEl.classList.add('playable');
+                    tileEl.onclick = () => onPlayerSelectTile(index);
+                }
+                playerHandEl.appendChild(tileEl);
+            });
+
+            const bazarBtn = document.getElementById('bazar-btn');
+            bazarBtn.disabled = (turn !== 'player') || hasValidMove || (deck.length === 0);
+
+            // Если у игрока нет ходов и базар пуст — автоматически пропускаем ход
+            if (turn === 'player' && !hasValidMove && deck.length === 0 && chain.length > 0) {
+                document.getElementById('status-message').textContent = 'Нет ходов! Пропуск хода...';
+                turn = 'bot';
+                setTimeout(() => {
+                    botMakeMove();
+                }, 1200);
+            }
+        }
+
+        function createTileElement(val1, val2, isDouble) {
+            const el = document.createElement('div');
+            el.className = `domino-tile ${isDouble ? 'is-double' : ''}`;
+
+            const h1 = document.createElement('div');
+            h1.className = 'domino-half';
+            addPips(h1, val1);
+
+            const div = document.createElement('div');
+            div.className = 'domino-divider';
+
+            const h2 = document.createElement('div');
+            h2.className = 'domino-half';
+            addPips(h2, val2);
+
+            el.appendChild(h1);
+            el.appendChild(div);
+            el.appendChild(h2);
+            return el;
+        }
+
+        function addPips(element, val) {
+            const pipPositions = {
+                1: [5],
+                2: [1, 9],
+                3: [1, 5, 9],
+                4: [1, 3, 7, 9],
+                5: [1, 3, 5, 7, 9],
+                6: [1, 3, 4, 6, 7, 9]
+            };
+
+            const positions = pipPositions[val] || [];
+            for (let i = 1; i <= 9; i++) {
+                if (positions.includes(i)) {
+                    const pip = document.createElement('div');
+                    pip.className = 'pip';
+                    element.appendChild(pip);
+                } else {
+                    element.appendChild(document.createElement('div'));
+                }
+            }
+        }
+
+        function onPlayerSelectTile(index) {
+            if (turn !== 'player') return;
+
+            let tile = playerHand[index];
+            if (chain.length === 0) {
+                chain.push({ left: tile.left, right: tile.right });
+                playerHand.splice(index, 1);
+                playSound('tile');
+                endTurn();
+                return;
+            }
+
+            let ends = getChainEnds();
+            let fitsLeft = (tile.left === ends.left || tile.right === ends.left);
+            let fitsRight = (tile.left === ends.right || tile.right === ends.right);
+
+            if (fitsLeft && fitsRight && ends.left !== ends.right) {
+                selectedTileIndex = index;
+                document.getElementById('side-picker').style.display = 'flex';
+            } else if (fitsLeft) {
+                makeMove(index, 'left');
+            } else if (fitsRight) {
+                makeMove(index, 'right');
+            }
+        }
+
+        function confirmSideMove(side) {
+            document.getElementById('side-picker').style.display = 'none';
+            if (selectedTileIndex !== -1) {
+                makeMove(selectedTileIndex, side);
+                selectedTileIndex = -1;
+            }
+        }
+
+        function makeMove(index, side) {
+            let tile = playerHand.splice(index, 1)[0];
+            let ends = getChainEnds();
+
+            if (side === 'left') {
+                if (tile.right === ends.left) {
+                    chain.unshift({ left: tile.left, right: tile.right });
+                } else {
+                    chain.unshift({ left: tile.right, right: tile.left });
+                }
+            } else {
+                if (tile.left === ends.right) {
+                    chain.push({ left: tile.left, right: tile.right });
+                } else {
+                    chain.push({ left: tile.right, right: tile.left });
+                }
+            }
+
+            playSound('tile');
+            endTurn();
+        }
+
+        function drawFromBazar() {
+            if (deck.length > 0 && turn === 'player') {
+                playerHand.push(deck.pop());
+                playSound('bazar');
+                renderUI();
+            }
+        }
+
+        function endTurn() {
+            if (checkGameEnd()) return;
+
+            turn = 'bot';
+            document.getElementById('status-message').textContent = 'Ход соперника...';
+            renderUI();
+
+            setTimeout(botMakeMove, 1000);
+        }
+
+        function botMakeMove() {
+            if (checkGameEnd()) return;
+
+            if (chain.length === 0) {
+                let tile = botHand.splice(0, 1)[0];
+                chain.push({ left: tile.left, right: tile.right });
+                playSound('tile');
+                finishBotTurn();
+                return;
+            }
+
+            let ends = getChainEnds();
+            let moveIndex = -1;
+            let side = 'right';
+
+            for (let i = 0; i < botHand.length; i++) {
+                let tile = botHand[i];
+                if (tile.left === ends.right || tile.right === ends.right) {
+                    moveIndex = i;
+                    side = 'right';
+                    break;
+                } else if (tile.left === ends.left || tile.right === ends.left) {
+                    moveIndex = i;
+                    side = 'left';
+                    break;
+                }
+            }
+
+            if (moveIndex !== -1) {
+                let tile = botHand.splice(moveIndex, 1)[0];
+                if (side === 'left') {
+                    if (tile.right === ends.left) chain.unshift({ left: tile.left, right: tile.right });
+                    else chain.unshift({ left: tile.right, right: tile.left });
+                } else {
+                    if (tile.left === ends.right) chain.push({ left: tile.left, right: tile.right });
+                    else chain.push({ left: tile.right, right: tile.left });
+                }
+                playSound('tile');
+                finishBotTurn();
+            } else {
+                if (deck.length > 0) {
+                    botHand.push(deck.pop());
+                    playSound('bazar');
+                    renderUI();
+                    setTimeout(botMakeMove, 800);
+                } else {
+                    document.getElementById('status-message').textContent = 'Соперник пропускает ход!';
+                    setTimeout(() => {
+                        finishBotTurn();
+                    }, 1000);
+                }
+            }
+        }
+
+        function finishBotTurn() {
+            if (checkGameEnd()) return;
+            turn = 'player';
+            document.getElementById('status-message').textContent = 'Ваш ход!';
+            renderUI();
+        }
+
+        function checkGameEnd() {
+            if (playerHand.length === 0) {
+                document.getElementById('status-message').textContent = '🎉 ВЫ ПОБЕДИЛИ!';
+                playSound('win');
+                turn = 'none';
+                renderUI();
+                return true;
+            } else if (botHand.length === 0) {
+                document.getElementById('status-message').textContent = '❌ ПОБЕДИЛ СОПЕРНИК!';
+                turn = 'none';
+                renderUI();
+                return true;
+            }
+
+            if (deck.length === 0 && chain.length > 0) {
+                let ends = getChainEnds();
+                let playerCanMove = playerHand.some(t => t.left === ends.left || t.right === ends.left || t.left === ends.right || t.right === ends.right);
+                let botCanMove = botHand.some(t => t.left === ends.left || t.right === ends.left || t.left === ends.right || t.right === ends.right);
+
+                if (!playerCanMove && !botCanMove) {
+                    let playerScore = playerHand.reduce((acc, t) => acc + t.left + t.right, 0);
+                    let botScore = botHand.reduce((acc, t) => acc + t.left + t.right, 0);
+
+                    if (playerScore < botScore) {
+                        document.getElementById('status-message').textContent = `🐟 РЫБА! Вы победили по очкам (${playerScore} vs ${botScore})!`;
+                        playSound('win');
+                    } else if (botScore < playerScore) {
+                        document.getElementById('status-message').textContent = `🐟 РЫБА! Бот победил по очкам (${botScore} vs ${playerScore})!`;
+                    } else {
+                        document.getElementById('status-message').textContent = `🐟 РЫБА! Ничья (${playerScore} очков)!`;
+                    }
+                    turn = 'none';
+                    renderUI();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
