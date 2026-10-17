@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ•ART LUXURY MINESWEEPER PRO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', 'Segoe UI', serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0f2b22 0%, #030805 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 6px;
+            overflow-x: hidden;
+        }
+
+        #fx-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .game-container {
+            background: radial-gradient(ellipse at center, rgba(14, 65, 47, 0.98) 0%, rgba(2, 12, 8, 0.99) 100%);
+            border: 3.5px solid #d4af37;
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.95), inset 0 0 25px rgba(212, 175, 55, 0.3);
+            max-width: 420px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 6px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+            padding-bottom: 4px;
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 1.05rem;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 8px rgba(212,175,55,0.4);
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 1px solid #fff5cc;
+            color: #030805;
+            padding: 4px 10px;
+            font-size: 0.68rem;
+            font-weight: 900;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1.5px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            padding: 6px;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .info-box {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .info-box span {
+            color: #ffd700;
+            font-size: 1rem;
+            font-weight: 900;
+            text-shadow: 0 1px 3px #000;
+        }
+
+        .face-btn {
+            background: radial-gradient(circle, #ffe57f 0%, #8a671c 100%);
+            border: 2px solid #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+            transition: transform 0.1s;
+        }
+        .face-btn:active { transform: scale(0.9); }
+
+        .status-message {
+            font-size: 0.78rem;
+            font-weight: bold;
+            color: #00e676;
+            min-height: 18px;
+            margin-bottom: 6px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+
+        .board-wrapper {
+            background: #020a07;
+            border: 3px solid #8a671c;
+            border-radius: 10px;
+            padding: 4px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+            margin-bottom: 8px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            max-height: 55vh;
+        }
+
+        .mines-grid {
+            display: grid;
+            gap: 2px;
+            background: #000;
+            padding: 2px;
+            border-radius: 4px;
+            margin: auto;
+        }
+
+        .cell {
+            background: linear-gradient(135deg, #2b1f0d 0%, #120d05 100%);
+            border: 1px solid #d4af37;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.2);
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .cell:active:not(.revealed) { transform: scale(0.92); }
+
+        .cell.revealed {
+            background: linear-gradient(135deg, rgba(20, 68, 52, 0.9) 0%, rgba(6, 26, 19, 0.95) 100%);
+            border-color: rgba(212, 175, 55, 0.25);
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.8);
+            cursor: default;
+        }
+
+        .cell.mine-hit {
+            background: radial-gradient(circle, #ff1744 0%, #8b0000 100%);
+            border-color: #fff;
+            box-shadow: 0 0 10px #ff1744;
+        }
+
+        .num-1 { color: #2196f3; }
+        .num-2 { color: #00e676; }
+        .num-3 { color: #ff1744; }
+        .num-4 { color: #ab47bc; }
+        .num-5 { color: #ffd700; }
+        .num-6 { color: #00e5ff; }
+        .num-7 { color: #ff9800; }
+        .num-8 { color: #ffffff; }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .selector-label {
+            font-size: 0.68rem;
+            color: #d4af37;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .option-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            width: 100%;
+        }
+
+        .opt-btn {
+            background: linear-gradient(180deg, #163e2e 0%, #081d15 100%);
+            border: 1.5px solid #d4af37;
+            color: #ccc;
+            padding: 5px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.7rem;
+            transition: all 0.15s ease;
+        }
+        .opt-btn.active {
+            background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+            color: #030805;
+            border-color: #fff;
+            box-shadow: 0 0 8px rgba(255,215,0,0.6);
+        }
+
+        .mode-toggle-btn {
+            background: linear-gradient(180deg, #2b1f0d 0%, #120d05 100%);
+            border: 2px solid #d4af37;
+            color: #ffd700;
+            font-weight: 900;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+            margin-top: 2px;
+        }
+        .mode-toggle-btn.flag-mode {
+            background: linear-gradient(180deg, #ffe57f 0%, #b8860b 100%);
+            color: #000;
+            border-color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="fx-canvas"></canvas>
+
+    <div class="game-container">
+        <div class="header-panel">
+            <h1>AZ•ART MINESWEEPER</h1>
+            <button class="btn-action" onclick="resetGame()">СБРОС</button>
+        </div>
+
+        <div class="info-bar">
+            <div class="info-box">💎 <span id="mines-count">10</span></div>
+            <div class="face-btn" id="face-btn" onclick="resetGame()">😎</div>
+            <div class="info-box">⏱️ <span id="timer">000</span></div>
+        </div>
+
+        <div class="status-message" id="status-message">Найдите все черные алмазы!</div>
+
+        <div class="board-wrapper">
+            <div class="mines-grid" id="mines-grid"></div>
+        </div>
+
+        <!-- НАСТРОЙКИ СЕТКИ И ПЛОТНОСТИ МИН -->
+        <div class="controls-panel">
+            <div>
+                <div class="selector-label">Размер поля:</div>
+                <div class="option-row">
+                    <button class="opt-btn active" id="s-9" onclick="setSize(9)">9 x 9</button>
+                    <button class="opt-btn" id="s-12" onclick="setSize(12)">12 x 12</button>
+                    <button class="opt-btn" id="s-15" onclick="setSize(15)">15 x 15</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="selector-label">Плотность мин:</div>
+                <div class="option-row">
+                    <button class="opt-btn" id="d-easy" onclick="setDensity('easy')">ЛЁГКИЙ</button>
+                    <button class="opt-btn active" id="d-medium" onclick="setDensity('medium')">СРЕДНИЙ</button>
+                    <button class="opt-btn" id="d-hard" onclick="setDensity('hard')">ХАРДКОР</button>
+                </div>
+            </div>
+
+            <button class="mode-toggle-btn" id="mode-btn" onclick="toggleMode()">
+                РЕЖИМ: ⛏️ ОТКРЫВАТЬ КЛЕТКИ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function launchConfetti() {
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15 - 4,
+                    color: ['#ffd700', '#00e676', '#ffffff', '#e91e63'][Math.floor(Math.random() * 4)],
+                    size: Math.random() * 6 + 3,
+                    alpha: 1,
+                    decay: 0.015
+                });
+            }
+        }
+
+        function updateFx() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+            requestAnimationFrame(updateFx);
+        }
+        updateFx();
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.04);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            } else if (type === 'flag') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(600, now + 0.06);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+            } else if (type === 'boom') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        const winOsc = audioCtx.createOscillator();
+                        const winGain = audioCtx.createGain();
+                        winOsc.type = 'sine';
+                        winOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        winGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        winGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                        winOsc.connect(winGain);
+                        winGain.connect(audioCtx.destination);
+                        winOsc.start();
+                        winOsc.stop(audioCtx.currentTime + 0.25);
+                    }, idx * 75);
+                });
+                return;
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        // Расчет процентов мин для каждого уровня
+        const densityRatios = {
+            easy: 0.10,    // 10% клеток с минами
+            medium: 0.16,  // ~16% клеток с минами
+            hard: 0.23     // ~23% клеток с минами
+        };
+
+        let currentSize = 9;
+        let currentDensity = 'medium';
+
+        let grid = [];
+        let flagsCount = 0;
+        let totalMines = 10;
+        let isFirstClick = true;
+        let gameOver = false;
+        let timerInterval = null;
+        let seconds = 0;
+        let isFlagMode = false;
+
+        function getCellSize(cols) {
+            const screenWidth = window.innerWidth;
+            const availableWidth = Math.min(screenWidth - 36, 390);
+            const calculatedSize = Math.floor((availableWidth - (cols * 2)) / cols);
+            
+            if (cols === 9) return Math.min(calculatedSize, 34);
+            if (cols === 12) return Math.min(calculatedSize, 27);
+            if (cols === 15) return Math.min(calculatedSize, 22);
+            return 28;
+        }
+
+        function setSize(size) {
+            playSound('click');
+            currentSize = size;
+            document.querySelectorAll('#s-9, #s-12, #s-15').forEach(b => b.classList.remove('active'));
+            document.getElementById(`s-${size}`).classList.add('active');
+            resetGame();
+        }
+
+        function setDensity(density) {
+            playSound('click');
+            currentDensity = density;
+            document.querySelectorAll('#d-easy, #d-medium, #d-hard').forEach(b => b.classList.remove('active'));
+            document.getElementById(`d-${density}`).classList.add('active');
+            resetGame();
+        }
+
+        function toggleMode() {
+            playSound('click');
+            isFlagMode = !isFlagMode;
+            const modeBtn = document.getElementById('mode-btn');
+            if (isFlagMode) {
+                modeBtn.classList.add('flag-mode');
+                modeBtn.textContent = 'РЕЖИМ: 🛡️ СТАВИТЬ ЩИТЫ';
+            } else {
+                modeBtn.classList.remove('flag-mode');
+                modeBtn.textContent = 'РЕЖИМ: ⛏️ ОТКРЫВАТЬ КЛЕТКИ';
+            }
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            seconds = 0;
+            document.getElementById('timer').textContent = '000';
+            document.getElementById('face-btn').textContent = '😎';
+
+            // Вычисляем точное количество мин
+            const totalCells = currentSize * currentSize;
+            totalMines = Math.max(3, Math.floor(totalCells * densityRatios[currentDensity]));
+            flagsCount = totalMines;
+            document.getElementById('mines-count').textContent = flagsCount;
+
+            document.getElementById('status-message').textContent = `Поле: ${currentSize}x${currentSize} | Алмазов: ${totalMines}`;
+
+            isFirstClick = true;
+            gameOver = false;
+            grid = [];
+
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const cellPx = getCellSize(currentSize);
+            const boardEl = document.getElementById('mines-grid');
+            boardEl.innerHTML = '';
+            boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellPx}px)`;
+
+            for (let r = 0; r < currentSize; r++) {
+                grid[r] = [];
+                for (let c = 0; c < currentSize; c++) {
+                    grid[r][c] = {
+                        row: r,
+                        col: c,
+                        isMine: false,
+                        revealed: false,
+                        flagged: false,
+                        count: 0
+                    };
+
+                    const cellEl = document.createElement('div');
+                    cellEl.className = 'cell';
+                    cellEl.style.width = `${cellPx}px`;
+                    cellEl.style.height = `${cellPx}px`;
+                    cellEl.style.fontSize = `${Math.max(10, cellPx * 0.45)}px`;
+                    cellEl.dataset.row = r;
+                    cellEl.dataset.col = c;
+
+                    let pressTimer = null;
+
+                    cellEl.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (isFlagMode) handleRightClick(r, c);
+                        else handleLeftClick(r, c);
+                    });
+
+                    cellEl.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        handleRightClick(r, c);
+                    });
+
+                    cellEl.addEventListener('touchstart', (e) => {
+                        pressTimer = setTimeout(() => {
+                            e.preventDefault();
+                            handleRightClick(r, c);
+                        }, 400);
+                    }, {passive: false});
+
+                    cellEl.addEventListener('touchend', () => clearTimeout(pressTimer));
+
+                    boardEl.appendChild(cellEl);
+                }
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').textContent = String(seconds).padStart(3, '0');
+            }, 1000);
+        }
+
+        function generateMines(firstR, firstC) {
+            let placed = 0;
+
+            while (placed < totalMines) {
+                let r = Math.floor(Math.random() * currentSize);
+                let c = Math.floor(Math.random() * currentSize);
+
+                if (!grid[r][c].isMine && (Math.abs(r - firstR) > 1 || Math.abs(c - firstC) > 1)) {
+                    grid[r][c].isMine = true;
+                    placed++;
+                }
+            }
+
+            for (let r = 0; r < currentSize; r++) {
+                for (let c = 0; c < currentSize; c++) {
+                    if (!grid[r][c].isMine) {
+                        let cnt = 0;
+                        for (let dr = -1; dr <= 1; dr++) {
+                            for (let dc = -1; dc <= 1; dc++) {
+                                let nr = r + dr;
+                                let nc = c + dc;
+                                if (nr >= 0 && nr < currentSize && nc >= 0 && nc < currentSize) {
+                                    if (grid[nr][nc].isMine) cnt++;
+                                }
+                            }
+                        }
+                        grid[r][c].count = cnt;
+                    }
+                }
+            }
+        }
+
+        function handleLeftClick(r, c) {
+            if (gameOver) return;
+            let cell = grid[r][c];
+            if (cell.flagged || cell.revealed) return;
+
+            if (isFirstClick) {
+                isFirstClick = false;
+                generateMines(r, c);
+                startTimer();
+            }
+
+            if (cell.isMine) {
+                gameOver = true;
+                clearInterval(timerInterval);
+                playSound('boom');
+                document.getElementById('face-btn').textContent = '💥';
+                document.getElementById('status-message').textContent = '❌ ВЗРЫВ! Игра окончена!';
+                revealMines(r, c);
+                return;
+            }
+
+            playSound('click');
+            revealCell(r, c);
+            checkWin();
+        }
+
+        function handleRightClick(r, c) {
+            if (gameOver || grid[r][c].revealed) return;
+            let cell = grid[r][c];
+
+            cell.flagged = !cell.flagged;
+            playSound('flag');
+
+            const cellEl = getCellEl(r, c);
+            if (cell.flagged) {
+                cellEl.textContent = '🛡️';
+                flagsCount--;
+            } else {
+                cellEl.textContent = '';
+                flagsCount++;
+            }
+
+            document.getElementById('mines-count').textContent = flagsCount;
+            checkWin();
+        }
+
+        function revealCell(r, c) {
+            if (r < 0 || r >= currentSize || c < 0 || c >= currentSize) return;
+
+            let cell = grid[r][c];
+            if (cell.revealed || cell.flagged) return;
+
+            cell.revealed = true;
+            const cellEl = getCellEl(r, c);
+            cellEl.classList.add('revealed');
+
+            if (cell.count > 0) {
+                cellEl.textContent = cell.count;
+                cellEl.classList.add(`num-${cell.count}`);
+            } else {
+                cellEl.textContent = '';
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr !== 0 || dc !== 0) revealCell(r + dr, c + dc);
+                    }
+                }
+            }
+        }
+
+        function revealMines(hitR, hitC) {
+            for (let r = 0; r < currentSize; r++) {
+                for (let c = 0; c < currentSize; c++) {
+                    let cell = grid[r][c];
+                    let cellEl = getCellEl(r, c);
+
+                    if (cell.isMine) {
+                        cellEl.textContent = '💎';
+                        cellEl.classList.add('revealed');
+                        if (r === hitR && c === hitC) {
+                            cellEl.classList.add('mine-hit');
+                        }
+                    } else if (cell.flagged) {
+                        cellEl.textContent = '❌';
+                    }
+                }
+            }
+        }
+
+        function checkWin() {
+            let unrevealedSafeCells = 0;
+
+            for (let r = 0; r < currentSize; r++) {
+                for (let c = 0; c < currentSize; c++) {
+                    let cell = grid[r][c];
+                    if (!cell.isMine && !cell.revealed) {
+                        unrevealedSafeCells++;
+                    }
+                }
+            }
+
+            if (unrevealedSafeCells === 0) {
+                gameOver = true;
+                clearInterval(timerInterval);
+                document.getElementById('face-btn').textContent = '👑';
+                document.getElementById('status-message').textContent = '🎉 ПОБЕДА! Все алмазы найдены!';
+                playSound('win');
+                launchConfetti();
+            }
+        }
+
+        function getCellEl(r, c) {
+            return document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+        }
+
+        window.addEventListener('resize', () => {
+            if (grid.length > 0) {
+                const cellPx = getCellSize(currentSize);
+                const boardEl = document.getElementById('mines-grid');
+                boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellPx}px)`;
+                
+                for (let r = 0; r < currentSize; r++) {
+                    for (let c = 0; c < currentSize; c++) {
+                        let el = getCellEl(r, c);
+                        if (el) {
+                            el.style.width = `${cellPx}px`;
+                            el.style.height = `${cellPx}px`;
+                            el.style.fontSize = `${Math.max(10, cellPx * 0.45)}px`;
+                        }
+                    }
+                }
+            }
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CS 1.6 Mobile - Smooth Look Fix</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; color: #fff; touch-action: none; }
+        
+        #ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 15px; z-index: 10;
+        }
+
+        .crosshair {
+            position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
+            transform: translate(-50%, -50%); border: 2px solid #00ff00; border-radius: 50%;
+        }
+
+        .hud-row {
+            display: flex; justify-content: space-between; font-size: 16px; font-weight: bold;
+            text-shadow: 2px 2px #000; color: #ffcc00;
+        }
+
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.7); border: 2px solid #555; padding: 8px 15px; border-radius: 4px;
+        }
+
+        #damage-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0); pointer-events: none; z-index: 15;
+            transition: background 0.1s ease-in-out;
+        }
+
+        #hit-marker {
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 22px; font-weight: bold; color: #ff3333; text-shadow: 2px 2px #000;
+            opacity: 0; transition: opacity 0.2s ease-in-out; pointer-events: none; z-index: 15;
+        }
+
+        #round-announcement {
+            position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 28px; font-weight: bold; color: #ffcc00; text-shadow: 2px 2px #000;
+            opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none; z-index: 25;
+            text-align: center;
+        }
+
+        #mobile-controls {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; display: none;
+        }
+
+        .mob-btn {
+            position: absolute; background: rgba(255, 204, 0, 0.3); border: 2px solid #ffcc00;
+            color: #ffcc00; font-weight: bold; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; pointer-events: auto;
+        }
+
+        #btn-shoot { right: 30px; bottom: 40px; width: 80px; height: 80px; background: rgba(255, 0, 0, 0.3); border-color: #ff3333; color: #ff3333; font-size: 24px; }
+        #btn-reload { right: 130px; bottom: 50px; width: 60px; height: 60px; font-size: 14px; }
+
+        #joystick-base {
+            position: absolute; left: 40px; bottom: 40px; width: 120px; height: 120px;
+            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; pointer-events: auto; display: none;
+        }
+        #joystick-stick {
+            position: absolute; left: 35px; top: 35px; width: 50px; height: 50px;
+            background: rgba(255, 204, 0, 0.5); border: 2px solid #ffcc00; border-radius: 50%;
+        }
+
+        #touch-look-zone { position: absolute; top: 0; right: 0; width: 50%; height: 100%; pointer-events: auto; }
+        #touch-move-zone { position: absolute; top: 0; left: 0; width: 50%; height: 100%; pointer-events: auto; }
+
+        #menu {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(10, 10, 10, 0.95); border: 3px solid #ffcc00; padding: 25px;
+            text-align: center; border-radius: 10px; pointer-events: auto; max-width: 90%; z-index: 30;
+        }
+
+        h1 { color: #ffcc00; margin-bottom: 10px; font-size: 22px; }
+        p { margin-bottom: 15px; color: #ccc; font-size: 13px; }
+        .btn {
+            background: #ffcc00; color: #000; padding: 12px 20px; margin: 5px;
+            font-weight: bold; border: none; cursor: pointer; font-size: 15px; border-radius: 4px; display: inline-block;
+        }
+        .btn:hover { background: #ffaa00; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div class="crosshair"></div>
+    <div id="damage-flash"></div>
+    <div id="hit-marker">HEADSHOT!</div>
+    <div id="round-announcement">РАУНД 1</div>
+
+    <div id="ui">
+        <div class="hud-row">
+            <div class="hud-panel">HP: <span id="hp-val">100</span></div>
+            <div class="hud-panel">СЧЕТ: <span id="score-val">0</span></div>
+        </div>
+        <div class="hud-row">
+            <div class="hud-panel">ПАТРОНЫ: <span id="ammo-val">30</span>/90</div>
+            <div class="hud-panel">РАУНД: <span id="round-val">1</span></div>
+        </div>
+    </div>
+
+    <div id="mobile-controls">
+        <div id="touch-look-zone"></div>
+        <div id="touch-move-zone"></div>
+        <div id="joystick-base"><div id="joystick-stick"></div></div>
+        <button class="mob-btn" id="btn-reload" onclick="reloadWeapon()">R</button>
+        <button class="mob-btn" id="btn-shoot" onclick="shoot()">🔥</button>
+    </div>
+
+    <div id="menu">
+        <h1>CS 1.6 MOBILE</h1>
+        <p>Выберите тип управления:</p>
+        <button class="btn" onclick="startGame('zones')">Зоны экрана (Свободный тач)</button>
+        <button class="btn" onclick="startGame('joystick')">Виртуальный джойстик</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer;
+        let isPlaying = false;
+        let hp = 100, score = 0, ammo = 30;
+        let currentRound = 1;
+        let controlType = 'zones';
+        
+        let moveVector = { x: 0, y: 0 };
+        let moveTouchId = null, moveTouchStart = { x: 0, y: 0 };
+        let lookTouchId = null, prevTouchX = 0, prevTouchY = 0;
+        let audioCtx = null;
+
+        let weaponGroup;
+        const bots = [];
+        const walls = [];
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                if (type === 'shoot') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(15, now + 0.2);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                } else if (type === 'hit') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.1);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                } else if (type === 'headshot') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(500, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                }
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } catch(e) {}
+        }
+
+        function init() {
+            if (typeof THREE === 'undefined') {
+                alert('Ошибка загрузки Three.js');
+                return;
+            }
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xd8cca3);
+            scene.fog = new THREE.FogExp2(0xd8cca3, 0.035);
+
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.8, 10);
+
+            renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const dirLight = new THREE.DirectionalLight(0xfffaed, 0.8);
+            dirLight.position.set(20, 40, 20);
+            scene.add(dirLight);
+
+            createPlayerWeapon();
+
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(80, 80),
+                new THREE.MeshStandardMaterial({ color: 0xc2b280, roughness: 0.9 })
+            );
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            createWall(0, 4, -22, 44, 8, 2, 0xa39478);
+            createWall(0, 4, 22, 44, 8, 2, 0xa39478);
+            createWall(-22, 4, 0, 2, 8, 44, 0xa39478);
+            createWall(22, 4, 0, 2, 8, 44, 0xa39478);
+
+            createWall(-6, 2, -6, 3, 3, 3, 0x8c6747);
+            createWall(6, 2, -6, 3, 3, 3, 0x8c6747);
+            createWall(-6, 2, 6, 3, 3, 3, 0x8c6747);
+            createWall(6, 2, 6, 3, 3, 3, 0x8c6747);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createPlayerWeapon() {
+            weaponGroup = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.4 });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.7), bodyMat);
+            body.position.set(0.25, -0.25, -0.5);
+            
+            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.set(0.25, -0.23, -0.85);
+
+            const mag = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.12), new THREE.MeshStandardMaterial({ color: 0x554422 }));
+            mag.position.set(0.25, -0.4, -0.45);
+            mag.rotation.x = -0.2;
+
+            weaponGroup.add(body);
+            weaponGroup.add(barrel);
+            weaponGroup.add(mag);
+            camera.add(weaponGroup);
+            scene.add(camera);
+        }
+
+        function createHumanoidBot() {
+            const botGroup = new THREE.Group();
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b89a });
+            const tShirtMat = new THREE.MeshStandardMaterial({ color: 0x992222 });
+            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x333344 });
+
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.0, 0.35), tShirtMat);
+            torso.position.y = 1.3;
+            torso.userData = { bodyPart: 'body' };
+            botGroup.add(torso);
+
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), skinMat);
+            head.position.y = 1.95;
+            head.userData = { bodyPart: 'head' };
+            botGroup.add(head);
+
+            const legGeo = new THREE.BoxGeometry(0.25, 0.9, 0.3);
+            const leftLeg = new THREE.Mesh(legGeo, pantsMat);
+            leftLeg.position.set(-0.2, 0.45, 0);
+            leftLeg.userData = { bodyPart: 'legs' };
+            
+            const rightLeg = new THREE.Mesh(legGeo, pantsMat);
+            rightLeg.position.set(0.2, 0.45, 0);
+            rightLeg.userData = { bodyPart: 'legs' };
+            
+            botGroup.add(leftLeg);
+            botGroup.add(rightLeg);
+
+            const armGeo = new THREE.BoxGeometry(0.2, 0.8, 0.25);
+            const leftArm = new THREE.Mesh(armGeo, tShirtMat);
+            leftArm.position.set(-0.48, 1.3, 0);
+            leftArm.userData = { bodyPart: 'arms' };
+            
+            const rightArm = new THREE.Mesh(armGeo, tShirtMat);
+            rightArm.position.set(0.48, 1.3, 0);
+            rightArm.userData = { bodyPart: 'arms' };
+            
+            botGroup.add(leftArm);
+            botGroup.add(rightArm);
+
+            return botGroup;
+        }
+
+        function createWall(x, y, z, w, h, d, color) {
+            const mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(w, h, d),
+                new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 })
+            );
+            mesh.position.set(x, y, z);
+            scene.add(mesh);
+            walls.push(mesh);
+        }
+
+        function startNewRound() {
+            bots.forEach(b => scene.remove(b.mesh));
+            bots.length = 0;
+
+            let botCount = 2 + currentRound;
+
+            for (let i = 0; i < botCount; i++) {
+                const botMesh = createHumanoidBot();
+                botMesh.position.set((Math.random() - 0.5) * 30, 0, (Math.random() - 0.5) * 30);
+                scene.add(botMesh);
+
+                bots.push({
+                    mesh: botMesh,
+                    hp: 100,
+                    speed: 0.018 + (currentRound * 0.002)
+                });
+            }
+
+            document.getElementById('round-val').textContent = currentRound;
+            showAnnouncement(`РАУНД ${currentRound}`);
+        }
+
+        function showAnnouncement(text) {
+            const ann = document.getElementById('round-announcement');
+            ann.textContent = text;
+            ann.style.opacity = '1';
+            setTimeout(() => { ann.style.opacity = '0'; }, 2000);
+        }
+
+        function triggerDamageEffect() {
+            const flash = document.getElementById('damage-flash');
+            flash.style.background = 'rgba(255, 0, 0, 0.4)';
+            setTimeout(() => {
+                flash.style.background = 'rgba(255, 0, 0, 0)';
+            }, 150);
+        }
+
+        function startGame(type) {
+            initAudio();
+            controlType = type;
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('mobile-controls').style.display = 'block';
+            
+            if (controlType === 'joystick') {
+                document.getElementById('joystick-base').style.display = 'block';
+            }
+            
+            setupControls();
+            currentRound = 1;
+            score = 0;
+            hp = 100;
+            document.getElementById('score-val').textContent = score;
+            document.getElementById('hp-val').textContent = hp;
+
+            startNewRound();
+            isPlaying = true;
+        }
+
+        function setupControls() {
+            const lookZone = document.getElementById('touch-look-zone');
+            const moveZone = document.getElementById('touch-move-zone');
+            let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+
+            // Исправление плавности и устранение рывков обзора
+            lookZone.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const t = e.changedTouches[0];
+                lookTouchId = t.identifier;
+                prevTouchX = t.clientX;
+                prevTouchY = t.clientY;
+            }, { passive: false });
+
+            lookZone.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if (t.identifier === lookTouchId) {
+                        const deltaX = t.clientX - prevTouchX;
+                        const deltaY = t.clientY - prevTouchY;
+                        prevTouchX = t.clientX;
+                        prevTouchY = t.clientY;
+
+                        euler.setFromQuaternion(camera.quaternion);
+                        euler.y -= deltaX * 0.004; // Плавный коэффициент чувствительности
+                        euler.x -= deltaY * 0.004;
+                        euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+                        camera.quaternion.setFromEuler(euler);
+                    }
+                }
+            }, { passive: false });
+
+            lookZone.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === lookTouchId) lookTouchId = null;
+                }
+            }, { passive: false });
+
+            if (controlType === 'zones') {
+                moveZone.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const t = e.changedTouches[0];
+                    moveTouchId = t.identifier;
+                    moveTouchStart = { x: t.clientX, y: t.clientY };
+                }, { passive: false });
+
+                moveZone.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        const t = e.changedTouches[i];
+                        if (t.identifier === moveTouchId) {
+                            moveVector.x = Math.max(-1, Math.min(1, (t.clientX - moveTouchStart.x) / 40));
+                            moveVector.y = Math.max(-1, Math.min(1, (t.clientY - moveTouchStart.y) / 40));
+                        }
+                    }
+                }, { passive: false });
+
+                moveZone.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === moveTouchId) {
+                            moveTouchId = null;
+                            moveVector = { x: 0, y: 0 };
+                        }
+                    }
+                }, { passive: false });
+            } else {
+                const base = document.getElementById('joystick-base');
+                const stick = document.getElementById('joystick-stick');
+                let joystickId = null;
+                let baseRect = base.getBoundingClientRect();
+
+                base.addEventListener('touchstart', (e) => {
+                    const t = e.changedTouches[0];
+                    joystickId = t.identifier;
+                    baseRect = base.getBoundingClientRect();
+                });
+
+                base.addEventListener('touchmove', (e) => {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        const t = e.changedTouches[i];
+                        if (t.identifier === joystickId) {
+                            const centerX = baseRect.left + baseRect.width / 2;
+                            const centerY = baseRect.top + baseRect.height / 2;
+                            let dx = t.clientX - centerX;
+                            let dy = t.clientY - centerY;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const maxDist = 40;
+
+                            if (dist > maxDist) {
+                                dx = (dx / dist) * maxDist;
+                                dy = (dy / dist) * maxDist;
+                            }
+
+                            stick.style.transform = `translate(${dx}px, ${dy}px)`;
+                            moveVector.x = dx / maxDist;
+                            moveVector.y = -dy / maxDist;
+                        }
+                    }
+                });
+
+                base.addEventListener('touchend', (e) => {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === joystickId) {
+                            joystickId = null;
+                            stick.style.transform = `translate(0px, 0px)`;
+                            moveVector = { x: 0, y: 0 };
+                        }
+                    }
+                });
+            }
+        }
+
+        function reloadWeapon() {
+            ammo = 30;
+            document.getElementById('ammo-val').textContent = ammo;
+        }
+
+        function showHeadshotMessage() {
+            const marker = document.getElementById('hit-marker');
+            marker.style.opacity = '1';
+            setTimeout(() => { marker.style.opacity = '0'; }, 300);
+        }
+
+        function shoot() {
+            if (!isPlaying || ammo <= 0) return;
+            ammo--;
+            document.getElementById('ammo-val').textContent = ammo;
+            playSound('shoot');
+
+            if (weaponGroup) {
+                weaponGroup.position.z += 0.08;
+                setTimeout(() => { weaponGroup.position.z = 0; }, 100);
+            }
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            
+            const botObjects = bots.map(b => b.mesh);
+            const intersects = raycaster.intersectObjects(botObjects, true);
+
+            if (intersects.length > 0) {
+                const hitMesh = intersects[0].object;
+                let rootObj = hitMesh;
+                while (rootObj.parent && !bots.some(b => b.mesh === rootObj)) {
+                    rootObj = rootObj.parent;
+                }
+                const hitBot = bots.find(b => b.mesh === rootObj);
+                
+                if (hitBot) {
+                    const isHeadshot = hitMesh.userData && hitMesh.userData.bodyPart === 'head';
+                    
+                    if (isHeadshot) {
+                        hitBot.hp = 0;
+                        playSound('headshot');
+                        showHeadshotMessage();
+                    } else {
+                        hitBot.hp -= 50;
+                        playSound('hit');
+                    }
+
+                    if (hitBot.hp <= 0) {
+                        scene.remove(hitBot.mesh);
+                        bots.splice(bots.indexOf(hitBot), 1);
+                        
+                        score += isHeadshot ? 200 : 100;
+                        document.getElementById('score-val').textContent = score;
+
+                        if (bots.length === 0) {
+                            currentRound++;
+                            setTimeout(() => {
+                                startNewRound();
+                            }, 1500);
+                        }
+                    }
+                }
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            if (isPlaying) {
+                const speed = 5.0 * delta;
+                camera.translateZ(-moveVector.y * speed);
+                camera.translateX(moveVector.x * speed);
+                camera.position.y = 1.8;
+
+                camera.position.x = Math.max(-20, Math.min(20, camera.position.x));
+                camera.position.z = Math.max(-20, Math.min(20, camera.position.z));
+
+                bots.forEach(bot => {
+                    const dir = new THREE.Vector3().subVectors(camera.position, bot.mesh.position);
+                    dir.y = 0;
+                    dir.normalize();
+                    bot.mesh.position.addScaledVector(dir, bot.speed);
+                    bot.mesh.lookAt(camera.position.x, bot.mesh.position.y, camera.position.z);
+
+                    const dx = bot.mesh.position.x - camera.position.x;
+                    const dz = bot.mesh.position.z - camera.position.z;
+                    const horizontalDist = Math.sqrt(dx * dx + dz * dz);
+
+                    if (horizontalDist < 1.3) {
+                        hp -= 1.5;
+                        document.getElementById('hp-val').textContent = Math.max(0, Math.round(hp));
+                        triggerDamageEffect();
+
+                        if (hp <= 0) {
+                            isPlaying = false;
+                            alert('ВЫ ПОГИБЛИ! Раунд: ' + currentRound + ' | Очки: ' + score);
+                            location.reload();
+                        }
+                    }
+                });
+            }
+
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        window.onload = () => {
+            init();
+            animate();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ•ART LUXURY TANKS ULTIMATE</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', 'Segoe UI', serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0f2b22 0%, #030805 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 6px;
+            overflow-x: hidden;
+        }
+
+        #fx-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .game-container {
+            background: radial-gradient(ellipse at center, rgba(14, 65, 47, 0.98) 0%, rgba(2, 12, 8, 0.99) 100%);
+            border: 3.5px solid #d4af37;
+            border-radius: 16px;
+            padding: 10px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.95), inset 0 0 25px rgba(212, 175, 55, 0.3);
+            max-width: 440px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 6px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+            padding-bottom: 4px;
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 1.05rem;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 8px rgba(212,175,55,0.4);
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 1px solid #fff5cc;
+            color: #030805;
+            padding: 4px 10px;
+            font-size: 0.68rem;
+            font-weight: 900;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+        }
+
+        /* ЧЕТКАЯ СТАТИСТИКА БЕЗ СМЕЩЕНИЙ */
+        .info-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1.5px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .info-box span {
+            color: #ffd700;
+            font-size: 0.95rem;
+            font-weight: 900;
+            text-shadow: 0 1px 3px #000;
+        }
+
+        .status-message {
+            font-size: 0.78rem;
+            font-weight: bold;
+            color: #00e676;
+            min-height: 18px;
+            margin-bottom: 6px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+
+        /* МЕНЮ ВЫБОРА КАРТ */
+        .map-selector {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+            margin-bottom: 6px;
+            justify-content: center;
+        }
+
+        .map-btn {
+            background: linear-gradient(180deg, #163e2e 0%, #081d15 100%);
+            border: 1px solid #d4af37;
+            color: #ccc;
+            padding: 3px 8px;
+            font-size: 0.68rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .map-btn.active {
+            background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+            color: #000;
+            border-color: #fff;
+        }
+
+        /* ПОЛЕ БОЯ CANVAS */
+        .board-wrapper {
+            background: #020a07;
+            border: 3px solid #8a671c;
+            border-radius: 10px;
+            padding: 4px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+            margin-bottom: 8px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-canvas {
+            background: #04140d;
+            border-radius: 6px;
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* ПАНЕЛЬ УПРАВЛЕНИЯ */
+        .controls-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 4px 8px;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 42px);
+            grid-template-rows: repeat(3, 42px);
+            gap: 4px;
+        }
+
+        .dpad-btn {
+            background: linear-gradient(180deg, #2b1f0d 0%, #120d05 100%);
+            border: 1.5px solid #d4af37;
+            color: #ffd700;
+            font-weight: 900;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+        }
+
+        .dpad-btn:active {
+            background: linear-gradient(180deg, #ffe57f 0%, #b8860b 100%);
+            color: #000;
+        }
+
+        .dpad-empty { visibility: hidden; }
+
+        .fire-btn {
+            background: linear-gradient(180deg, #ffe57f 0%, #d4af37 40%, #8a671c 100%);
+            border: 2px solid #fff5cc;
+            color: #030805;
+            font-size: 0.95rem;
+            font-weight: 900;
+            border-radius: 50%;
+            width: 76px;
+            height: 76px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fire-btn:active { transform: scale(0.92); }
+    </style>
+</head>
+<body>
+
+    <canvas id="fx-canvas"></canvas>
+
+    <div class="game-container">
+        <div class="header-panel">
+            <h1>AZ•ART TANKS</h1>
+            <button class="btn-action" onclick="resetGame()">СБРОС</button>
+        </div>
+
+        <div class="map-selector">
+            <button class="map-btn active" onclick="selectMap(0)">Карта 1</button>
+            <button class="map-btn" onclick="selectMap(1)">Карта 2</button>
+            <button class="map-btn" onclick="selectMap(2)">Карта 3</button>
+            <button class="map-btn" onclick="selectMap(3)">Карта 4</button>
+        </div>
+
+        <div class="info-bar">
+            <div class="info-box">ЖИЗНИ: <span id="lives-count">3</span></div>
+            <div class="info-box">ОЧКИ: <span id="score-count">0</span></div>
+            <div class="info-box">ВРАГИ: <span id="enemies-count">8</span></div>
+        </div>
+
+        <div class="status-message" id="status-message">Защитите орла 🦅 и побейте врагов!</div>
+
+        <div class="board-wrapper">
+            <canvas id="game-canvas" width="360" height="360"></canvas>
+        </div>
+
+        <div class="controls-panel">
+            <div class="dpad">
+                <div class="dpad-empty"></div>
+                <button class="dpad-btn" id="btn-up">▲</button>
+                <div class="dpad-empty"></div>
+                <button class="dpad-btn" id="btn-left">◄</button>
+                <div class="dpad-empty"></div>
+                <button class="dpad-btn" id="btn-right">►</button>
+                <div class="dpad-empty"></div>
+                <button class="dpad-btn" id="btn-down">▼</button>
+                <div class="dpad-empty"></div>
+            </div>
+
+            <button class="fire-btn" id="btn-fire">ОГОНЬ</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function launchConfetti() {
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15 - 4,
+                    color: ['#ffd700', '#00e676', '#ffffff', '#e91e63'][Math.floor(Math.random() * 4)],
+                    size: Math.random() * 6 + 3,
+                    alpha: 1,
+                    decay: 0.015
+                });
+            }
+        }
+
+        function spawnExplosion(x, y, color = '#ffd700') {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    color: [color, '#ff1744', '#ffffff', '#ff9800'][Math.floor(Math.random() * 4)],
+                    size: Math.random() * 5 + 2,
+                    alpha: 1,
+                    decay: 0.03
+                });
+            }
+        }
+
+        function updateFx() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+            requestAnimationFrame(updateFx);
+        }
+        updateFx();
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'shoot') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            } else if (type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        const winOsc = audioCtx.createOscillator();
+                        const winGain = audioCtx.createGain();
+                        winOsc.type = 'sine';
+                        winOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        winGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        winGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                        winOsc.connect(winGain);
+                        winGain.connect(audioCtx.destination);
+                        winOsc.start();
+                        winOsc.stop(audioCtx.currentTime + 0.25);
+                    }, idx * 75);
+                });
+                return;
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        const gCanvas = document.getElementById('game-canvas');
+        const gCtx = gCanvas.getContext('2d');
+
+        const GRID_SIZE = 12;
+        const CELL = 30;
+        const DIRS = {
+            UP: { x: 0, y: -1, angle: 0 },
+            DOWN: { x: 0, y: 1, angle: Math.PI },
+            LEFT: { x: -1, y: 0, angle: -Math.PI / 2 },
+            RIGHT: { x: 1, y: 0, angle: Math.PI / 2 }
+        };
+
+        // 4 РАЗЛИЧНЫЕ КАРТЫ (Миссии)
+        // 0 - пусто, 1 - кирпич, 2 - сталь, 3 - база с орлом 🦅
+        const mapsLibrary = [
+            // Карта 1: Классическая цитадель
+            [
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,1,1,0,1,1,1,1,0,1,1,0],
+                [0,1,1,0,1,1,1,1,0,1,1,0],
+                [0,0,0,0,0,2,2,0,0,0,0,0],
+                [1,1,0,1,0,0,0,0,1,0,1,1],
+                [2,1,0,1,1,0,0,1,1,0,1,2],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [1,1,0,1,1,2,2,1,1,0,1,1],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,1,1,0,1,1,1,1,0,1,1,0],
+                [0,1,1,0,1,3,3,1,0,1,1,0],
+                [0,0,0,0,1,3,3,1,0,0,0,0]
+            ],
+            // Карта 2: Лабиринт баронов
+            [
+                [0,2,0,0,1,1,1,1,0,0,2,0],
+                [0,2,0,0,1,0,0,1,0,0,2,0],
+                [0,0,0,0,1,0,0,1,0,0,0,0],
+                [1,1,1,0,0,0,0,0,0,1,1,1],
+                [0,0,0,0,2,2,2,2,0,0,0,0],
+                [1,1,0,0,1,0,0,1,0,0,1,1],
+                [1,1,0,0,1,0,0,1,0,0,1,1],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [2,2,1,1,0,0,0,0,1,1,2,2],
+                [0,0,1,1,0,1,1,0,1,1,0,0],
+                [0,0,0,0,0,3,3,0,0,0,0,0],
+                [0,0,0,0,0,3,3,0,0,0,0,0]
+            ],
+            // Карта 3: Крепость Эмира
+            [
+                [1,0,1,0,1,0,0,1,0,1,0,1],
+                [1,0,1,0,2,2,2,2,0,1,0,1],
+                [0,0,0,0,1,0,0,1,0,0,0,0],
+                [0,1,1,0,1,0,0,1,0,1,1,0],
+                [0,1,1,0,0,0,0,0,0,1,1,0],
+                [2,0,0,0,1,1,1,1,0,0,0,2],
+                [2,0,0,0,1,0,0,1,0,0,0,2],
+                [0,0,1,1,0,0,0,0,1,1,0,0],
+                [0,0,1,1,0,2,2,0,1,1,0,0],
+                [1,0,0,0,0,1,1,0,0,0,0,1],
+                [1,0,1,0,0,3,3,0,0,1,0,1],
+                [1,0,1,0,0,3,3,0,0,1,0,1]
+            ],
+            // Карта 4: Золотой каньон
+            [
+                [2,2,0,0,0,1,1,0,0,0,2,2],
+                [0,0,0,1,1,1,1,1,1,0,0,0],
+                [0,1,0,1,0,0,0,0,1,0,1,0],
+                [0,1,0,2,0,0,0,0,2,0,1,0],
+                [0,1,0,0,0,1,1,0,0,0,1,0],
+                [0,0,0,1,1,2,2,1,1,0,0,0],
+                [1,1,0,1,0,0,0,0,1,0,1,1],
+                [1,1,0,0,0,0,0,0,0,0,1,1],
+                [0,0,0,2,1,1,1,1,2,0,0,0],
+                [0,1,1,0,0,0,0,0,0,1,1,0],
+                [0,1,1,0,0,3,3,0,0,1,1,0],
+                [0,0,0,0,0,3,3,0,0,0,0,0]
+            ]
+        ];
+
+        let currentMapIdx = 0;
+        let map = [];
+        let player = null;
+        let enemies = [];
+        let bullets = [];
+        let remainingEnemies = 8;
+        let score = 0;
+        let lives = 3;
+        let gameOver = false;
+        let enemySpawnTimer = 0;
+
+        function selectMap(idx) {
+            currentMapIdx = idx;
+            document.querySelectorAll('.map-btn').forEach((b, i) => {
+                if (i === idx) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            resetGame();
+        }
+
+        function resetGame() {
+            // Глубокое копирование выбранной карты
+            map = mapsLibrary[currentMapIdx].map(row => [...row]);
+
+            player = {
+                x: 4 * CELL,
+                y: 11 * CELL,
+                dir: DIRS.UP,
+                speed: 2,
+                size: 26,
+                isPlayer: true
+            };
+
+            enemies = [];
+            bullets = [];
+            remainingEnemies = 8;
+            gameOver = false;
+
+            updateUI();
+            document.getElementById('status-message').textContent = `Миссия ${currentMapIdx + 1}: Защитите орла 🦅!`;
+        }
+
+        function updateUI() {
+            document.getElementById('lives-count').textContent = lives;
+            document.getElementById('score-count').textContent = score;
+            document.getElementById('enemies-count').textContent = remainingEnemies;
+        }
+
+        function spawnEnemy() {
+            if (enemies.length < 3 && remainingEnemies > 0) {
+                const spawns = [0, 6 * CELL, 11 * CELL];
+                const spawnX = spawns[Math.floor(Math.random() * spawns.length)];
+                enemies.push({
+                    x: spawnX,
+                    y: 0,
+                    dir: DIRS.DOWN,
+                    speed: 1.2,
+                    size: 26,
+                    isPlayer: false,
+                    shootTimer: 0
+                });
+            }
+        }
+
+        function canMove(x, y, size) {
+            if (x < 0 || x + size > 360 || y < 0 || y + size > 360) return false;
+
+            let left = Math.floor(x / CELL);
+            let right = Math.floor((x + size - 1) / CELL);
+            let top = Math.floor(y / CELL);
+            let bottom = Math.floor((y + size - 1) / CELL);
+
+            for (let r = top; r <= bottom; r++) {
+                for (let c = left; c <= right; c++) {
+                    if (map[r] && map[r][c] !== 0) return false;
+                }
+            }
+            return true;
+        }
+
+        function shoot(tank) {
+            playSound('shoot');
+            bullets.push({
+                x: tank.x + CELL / 2 - 3,
+                y: tank.y + CELL / 2 - 3,
+                dir: tank.dir,
+                speed: 5,
+                fromPlayer: tank.isPlayer
+            });
+        }
+
+        let keys = {};
+        document.addEventListener('keydown', e => keys[e.key] = true);
+        document.addEventListener('keyup', e => keys[e.key] = false);
+
+        function handleInput() {
+            if (!player || gameOver) return;
+
+            let nextX = player.x;
+            let nextY = player.y;
+
+            if (keys['ArrowUp'] || keys['w']) { player.dir = DIRS.UP; nextY -= player.speed; }
+            else if (keys['ArrowDown'] || keys['s']) { player.dir = DIRS.DOWN; nextY += player.speed; }
+            else if (keys['ArrowLeft'] || keys['a']) { player.dir = DIRS.LEFT; nextX -= player.speed; }
+            else if (keys['ArrowRight'] || keys['d']) { player.dir = DIRS.RIGHT; nextX += player.speed; }
+
+            if (canMove(nextX, nextY, player.size)) {
+                player.x = nextX;
+                player.y = nextY;
+            }
+
+            if (keys[' '] || keys['f']) {
+                if (!player.lastShoot || Date.now() - player.lastShoot > 400) {
+                    shoot(player);
+                    player.lastShoot = Date.now();
+                }
+            }
+        }
+
+        function bindDpad(id, dir) {
+            const btn = document.getElementById(id);
+            let interval = null;
+            const start = (e) => {
+                e.preventDefault();
+                if (!player || gameOver) return;
+                player.dir = dir;
+                interval = setInterval(() => {
+                    let nextX = player.x + dir.x * player.speed;
+                    let nextY = player.y + dir.y * player.speed;
+                    if (canMove(nextX, nextY, player.size)) {
+                        player.x = nextX;
+                        player.y = nextY;
+                    }
+                }, 20);
+            };
+            const stop = (e) => {
+                e.preventDefault();
+                clearInterval(interval);
+            };
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', stop);
+            btn.addEventListener('mouseleave', stop);
+            btn.addEventListener('touchstart', start, {passive: false});
+            btn.addEventListener('touchend', stop, {passive: false});
+        }
+
+        bindDpad('btn-up', DIRS.UP);
+        bindDpad('btn-down', DIRS.DOWN);
+        bindDpad('btn-left', DIRS.LEFT);
+        bindDpad('btn-right', DIRS.RIGHT);
+
+        document.getElementById('btn-fire').addEventListener('click', () => {
+            if (player && !gameOver) shoot(player);
+        });
+
+        function update() {
+            if (gameOver) return;
+
+            handleInput();
+
+            enemySpawnTimer++;
+            if (enemySpawnTimer > 120) {
+                spawnEnemy();
+                enemySpawnTimer = 0;
+            }
+
+            enemies.forEach(enemy => {
+                let nextX = enemy.x + enemy.dir.x * enemy.speed;
+                let nextY = enemy.y + enemy.dir.y * enemy.speed;
+
+                if (canMove(nextX, nextY, enemy.size)) {
+                    enemy.x = nextX;
+                    enemy.y = nextY;
+                } else {
+                    const dirsArr = [DIRS.UP, DIRS.DOWN, DIRS.LEFT, DIRS.RIGHT];
+                    enemy.dir = dirsArr[Math.floor(Math.random() * dirsArr.length)];
+                }
+
+                enemy.shootTimer++;
+                if (enemy.shootTimer > 90) {
+                    shoot(enemy);
+                    enemy.shootTimer = 0;
+                }
+            });
+
+            bullets.forEach((b, idx) => {
+                b.x += b.dir.x * b.speed;
+                b.y += b.dir.y * b.speed;
+
+                if (b.x < 0 || b.x > 360 || b.y < 0 || b.y > 360) {
+                    bullets.splice(idx, 1);
+                    return;
+                }
+
+                let gridX = Math.floor((b.x + 3) / CELL);
+                let gridY = Math.floor((b.y + 3) / CELL);
+
+                if (map[gridY] && map[gridY][gridX] !== 0) {
+                    let tile = map[gridY][gridX];
+                    if (tile === 1) {
+                        map[gridY][gridX] = 0;
+                        spawnExplosion(gridX * CELL + 15, gridY * CELL + 15, '#d4af37');
+                        playSound('hit');
+                    } else if (tile === 3) {
+                        spawnExplosion(gridX * CELL + 15, gridY * CELL + 15, '#ff1744');
+                        gameOver = true;
+                        document.getElementById('status-message').textContent = '💥 ОРЕЛ ПОГИБ! Поражение!';
+                        playSound('hit');
+                    }
+                    bullets.splice(idx, 1);
+                    return;
+                }
+
+                if (b.fromPlayer) {
+                    enemies.forEach((e, eIdx) => {
+                        if (b.x >= e.x && b.x <= e.x + e.size && b.y >= e.y && b.y <= e.y + e.size) {
+                            spawnExplosion(e.x + 13, e.y + 13, '#ffd700');
+                            enemies.splice(eIdx, 1);
+                            bullets.splice(idx, 1);
+                            remainingEnemies--;
+                            score += 100;
+                            updateUI();
+                            playSound('hit');
+
+                            if (remainingEnemies <= 0 && enemies.length === 0) {
+                                gameOver = true;
+                                playSound('win');
+                                launchConfetti();
+
+                                // Проверка наличия следующей миссии
+                                if (currentMapIdx < mapsLibrary.length - 1) {
+                                    let nextIdx = currentMapIdx + 1;
+                                    document.getElementById('status-message').textContent = `🎉 ПОБЕДА! Переход на карту ${nextIdx + 1}?`;
+                                    setTimeout(() => {
+                                        if (confirm(`Миссия ${currentMapIdx + 1} пройдена! Желаете перейти к следующей карте?`)) {
+                                            selectMap(nextIdx);
+                                        }
+                                    }, 500);
+                                } else {
+                                    document.getElementById('status-message').textContent = '🏆 ВСЕ МИСИИ ПРОЙДЕНЫ! Поздравляем!';
+                                }
+                            }
+                        }
+                    });
+                } else if (player) {
+                    if (b.x >= player.x && b.x <= player.x + player.size && b.y >= player.y && b.y <= player.y + player.size) {
+                        spawnExplosion(player.x + 13, player.y + 13, '#ff1744');
+                        bullets.splice(idx, 1);
+                        lives--;
+                        updateUI();
+                        playSound('hit');
+
+                        if (lives <= 0) {
+                            gameOver = true;
+                            document.getElementById('status-message').textContent = '❌ ТАНК УНИЧТОЖЕН! Игра окончена!';
+                        } else {
+                            player.x = 4 * CELL;
+                            player.y = 11 * CELL;
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawTank(tank, primaryColor, secondaryColor) {
+            gCtx.save();
+            gCtx.translate(tank.x + 13, tank.y + 13);
+            gCtx.rotate(tank.dir.angle);
+
+            gCtx.fillStyle = '#111';
+            gCtx.fillRect(-13, -13, 5, 26);
+            gCtx.fillRect(8, -13, 5, 26);
+
+            gCtx.fillStyle = primaryColor;
+            gCtx.fillRect(-8, -10, 16, 20);
+
+            gCtx.fillStyle = secondaryColor;
+            gCtx.beginPath();
+            gCtx.arc(0, 0, 6, 0, Math.PI * 2);
+            gCtx.fill();
+
+            gCtx.fillStyle = '#fff';
+            gCtx.fillRect(-2, -14, 4, 10);
+
+            gCtx.restore();
+        }
+
+        function draw() {
+            gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+
+            gCtx.strokeStyle = 'rgba(212, 175, 55, 0.05)';
+            gCtx.lineWidth = 1;
+            for (let i = 0; i < 360; i += CELL) {
+                gCtx.beginPath(); gCtx.moveTo(i, 0); gCtx.lineTo(i, 360); gCtx.stroke();
+                gCtx.beginPath(); gCtx.moveTo(0, i); gCtx.lineTo(360, i); gCtx.stroke();
+            }
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let tile = map[r][c];
+                    if (tile === 1) {
+                        gCtx.fillStyle = '#8a671c';
+                        gCtx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+                        gCtx.strokeStyle = '#ffd700';
+                        gCtx.strokeRect(c * CELL + 3, r * CELL + 3, CELL - 6, CELL - 6);
+                    } else if (tile === 2) {
+                        gCtx.fillStyle = '#37474f';
+                        gCtx.fillRect(c * CELL, r * CELL, CELL, CELL);
+                        gCtx.strokeStyle = '#78909c';
+                        gCtx.strokeRect(c * CELL + 2, r * CELL + 2, CELL - 4, CELL - 4);
+                    } else if (tile === 3) { // База с Орлом 🦅
+                        gCtx.fillStyle = '#ffd700';
+                        gCtx.font = '20px serif';
+                        gCtx.textAlign = 'center';
+                        gCtx.textBaseline = 'middle';
+                        gCtx.fillText('🦅', c * CELL + CELL / 2, r * CELL + CELL / 2);
+                    }
+                }
+            }
+
+            if (player && lives > 0) {
+                drawTank(player, '#d4af37', '#ffe57f');
+            }
+
+            enemies.forEach(e => {
+                drawTank(e, '#c0c0c0', '#ff1744');
+            });
+
+            bullets.forEach(b => {
+                gCtx.fillStyle = b.fromPlayer ? '#ffd700' : '#ff1744';
+                gCtx.beginPath();
+                gCtx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+                gCtx.fill();
+            });
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        resetGame();
+        gameLoop();
+    </script>
+</body>
+</html>
