@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Градиент для объемной тени под свертком -->
+    <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(0,0,0,0.6)" />
+      <stop offset="60%" stop-color="rgba(0,0,0,0.2)" />
+      <stop offset="100%" stop-color="rgba(0,0,0,0)" />
+    </radialGradient>
+
+    <!-- Базовый градиент красной изоленты (глянец + объем) -->
+    <linearGradient id="tapeBaseGrad" x1="20%" y1="10%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#ff4d4d" />
+      <stop offset="35%" stop-color="#e60000" />
+      <stop offset="70%" stop-color="#990000" />
+      <stop offset="100%" stop-color="#4a0000" />
+    </linearGradient>
+
+    <!-- Блик изоленты -->
+    <linearGradient id="tapeHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.6)" />
+      <stop offset="50%" stop-color="rgba(255,255,255,0.1)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+    </linearGradient>
+
+    <!-- Фильтр для создания легкой текстуры и объема -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#2a0000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Фон -->
+  <rect width="100%" height="100%" fill="#ffffff00" />
+
+  <g transform="translate(0, 20)">
+    <!-- Тень на столе -->
+    <ellipse cx="250" cy="360" rx="90" ry="22" fill="url(#shadowGrad)" />
+
+    <!-- Основная неровная форма свертка (камень) -->
+    <g filter="url(#softShadow)">
+      <path d="M 210,170 
+               C 240,155 280,165 310,185 
+               C 335,200 350,230 345,265 
+               C 340,300 315,335 285,345 
+               C 255,355 205,350 180,330 
+               C 155,310 145,270 155,235 
+               C 165,200 185,180 210,170 Z" 
+            fill="url(#tapeBaseGrad)" />
+
+      <!-- Слои изоленты (нахлесты и рельеф) -->
+      <!-- Полоса 1 -->
+      <path d="M 160,225 C 190,210 260,200 320,220 C 330,223 335,235 325,245 C 260,225 190,235 155,250 Z" 
+            fill="#cc0000" opacity="0.7" />
+      
+      <!-- Полоса 2 (диагональный обмоточный слой) -->
+      <path d="M 190,170 C 230,190 280,250 300,335 C 285,342 270,340 255,325 C 238,245 195,195 175,180 Z" 
+            fill="#b30000" opacity="0.6" />
+
+      <!-- Полоса 3 (поперечная намотка) -->
+      <path d="M 152,245 C 190,265 260,285 340,270 C 342,285 330,310 305,325 C 240,330 180,305 158,270 Z" 
+            fill="#e60000" opacity="0.5" />
+
+      <!-- Полоса 4 (вертикальный захлест) -->
+      <path d="M 230,162 C 255,160 270,170 275,190 C 260,240 250,290 245,352 C 230,351 215,345 210,335 C 220,280 230,220 230,162 Z" 
+            fill="#ff1a1a" opacity="0.4" />
+
+      <!-- Складки и рельефные линии (неровности камня) -->
+      <path d="M 180,185 Q 220,210 240,270" stroke="#800000" stroke-width="2.5" fill="none" opacity="0.6" />
+      <path d="M 220,165 Q 260,220 310,240" stroke="#ff8080" stroke-width="1.5" fill="none" opacity="0.7" />
+      <path d="M 155,260 Q 210,280 280,335" stroke="#4a0000" stroke-width="2" fill="none" opacity="0.5" />
+      <path d="M 270,180 Q 320,230 335,280" stroke="#ff9999" stroke-width="1.5" fill="none" opacity="0.6" />
+      
+      <!-- Край/конец изоленты (загиб) -->
+      <path d="M 260,250 L 290,265 L 285,280 L 255,262 Z" fill="#ff3333" stroke="#990000" stroke-width="1" />
+      <line x1="290" y1="265" x2="285" y2="280" stroke="#ffffff" stroke-width="1" opacity="0.5" />
+
+      <!-- Глянцевые блики (отблеск PVC-изоленты) -->
+      <path d="M 195,178 C 225,168 260,175 285,190 C 260,185 220,182 195,190 Z" fill="url(#tapeHighlight)" />
+      <path d="M 165,220 C 180,200 210,190 230,195 C 205,200 185,210 165,230 Z" fill="url(#tapeHighlight)" />
+      <ellipse cx="295" cy="225" rx="15" ry="35" fill="url(#tapeHighlight)" transform="rotate(-25 295 225)" />
+    </g>
+  </g>
+</svg>

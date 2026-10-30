@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Тень под свертком -->
+    <radialGradient id="shadowGradBlack" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(0,0,0,0.8)" />
+      <stop offset="60%" stop-color="rgba(0,0,0,0.3)" />
+      <stop offset="100%" stop-color="rgba(0,0,0,0)" />
+    </radialGradient>
+
+    <!-- Основной черный градиент (глянец PVC) -->
+    <linearGradient id="blackTapeGrad" x1="20%" y1="10%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#4a4a4a" />
+      <stop offset="35%" stop-color="#2b2b2b" />
+      <stop offset="70%" stop-color="#141414" />
+      <stop offset="100%" stop-color="#050505" />
+    </linearGradient>
+
+    <!-- Яркие глянцевые блики (для эффекта виниловой черной изоленты) -->
+    <linearGradient id="blackHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.7)" />
+      <stop offset="40%" stop-color="rgba(255,255,255,0.2)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+    </linearGradient>
+
+    <!-- Фильтр объемной тени -->
+    <filter id="softShadowBlack" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Фон -->
+  <rect width="100%" height="100%" fill="#f4f4f600" />
+
+  <g transform="translate(0, 20)">
+    <!-- Тень на столе -->
+    <ellipse cx="250" cy="360" rx="90" ry="22" fill="url(#shadowGradBlack)" />
+
+    <!-- Основная неровная форма свертка -->
+    <g filter="url(#softShadowBlack)">
+      <!-- Базовый полностью закрывающий слой -->
+      <path d="M 210,170 
+               C 240,155 280,165 310,185 
+               C 335,200 350,230 345,265 
+               C 340,300 315,335 285,345 
+               C 255,355 205,350 180,330 
+               C 155,310 145,270 155,235 
+               C 165,200 185,180 210,170 Z" 
+            fill="url(#blackTapeGrad)" />
+
+      <!-- Виток 1 -->
+      <path d="M 155,235 C 190,215 260,205 325,225 C 335,235 330,255 315,265 C 255,245 190,250 152,260 Z" 
+            fill="#1c1c1c" stroke="#0d0d0d" stroke-width="1.5" />
+      
+      <!-- Виток 2 -->
+      <path d="M 185,170 C 225,190 275,250 295,338 C 280,345 265,342 250,328 C 235,250 192,198 170,182 Z" 
+            fill="#2b2b2b" stroke="#121212" stroke-width="1.5" />
+
+      <!-- Виток 3 -->
+      <path d="M 152,250 C 190,270 260,290 342,272 C 344,288 332,312 305,328 C 240,332 180,308 155,272 Z" 
+            fill="#333333" stroke="#1a1a1a" stroke-width="1.5" />
+
+      <!-- Виток 4 -->
+      <path d="M 230,162 C 255,160 270,170 275,190 C 260,240 250,290 245,352 C 230,351 215,345 210,335 C 220,280 230,220 230,162 Z" 
+            fill="#3d3d3d" stroke="#1f1f1f" stroke-width="1.5" />
+
+      <!-- Верхний нахлест -->
+      <path d="M 175,200 C 220,180 290,210 330,250 C 315,265 295,260 275,240 C 240,215 190,215 168,222 Z" 
+            fill="#262626" stroke="#0f0f0f" stroke-width="1.5" />
+
+      <!-- Складки, тени и светлые грани виниловой пленки -->
+      <path d="M 180,185 Q 220,210 240,270" stroke="#000000" stroke-width="2.5" fill="none" opacity="0.8" />
+      <path d="M 220,165 Q 260,220 310,240" stroke="#777777" stroke-width="1.5" fill="none" opacity="0.6" />
+      <path d="M 155,260 Q 210,280 280,335" stroke="#0a0a0a" stroke-width="2" fill="none" opacity="0.7" />
+      <path d="M 270,180 Q 320,230 335,280" stroke="#888888" stroke-width="1.5" fill="none" opacity="0.5" />
+      
+      <!-- Край/конец изоленты -->
+      <path d="M 260,250 L 290,265 L 285,280 L 255,262 Z" fill="#444444" stroke="#111111" stroke-width="1" />
+      <line x1="290" y1="265" x2="285" y2="280" stroke="#ffffff" stroke-width="1" opacity="0.7" />
+
+      <!-- Глянцевые блики -->
+      <path d="M 195,178 C 225,168 260,175 285,190 C 260,185 220,182 195,190 Z" fill="url(#blackHighlight)" />
+      <path d="M 165,220 C 180,200 210,190 230,195 C 205,200 185,210 165,230 Z" fill="url(#blackHighlight)" />
+      <ellipse cx="295" cy="225" rx="15" ry="35" fill="url(#blackHighlight)" transform="rotate(-25 295 225)" />
+    </g>
+  </g>
+</svg>
